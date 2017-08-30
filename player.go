@@ -119,3 +119,18 @@ func (p *Player) Start() {
 		}
 	}
 }
+
+// Listen tells the player to listen to events from the
+// piano MIDI connection. This is meant to be run in a
+// separate thread.
+func (p *Player) Listen() {
+	logger := log.WithFields(log.Fields{
+		"function": "Player.Listen",
+	})
+
+	ch := p.Piano.inputStream.Listen()
+	for {
+		event := <-ch
+		logger.Infof("Event %v", event)
+	}
+}

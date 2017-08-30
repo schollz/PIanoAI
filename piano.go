@@ -11,7 +11,8 @@ import (
 type Piano struct {
 	InputDevice  portmidi.DeviceID
 	OutputDevice portmidi.DeviceID
-	stream       *portmidi.Stream
+	outputStream *portmidi.Stream
+	inputStream  *portmidi.Stream
 }
 
 // Init sets the device ports. Optionally you can
@@ -48,8 +49,8 @@ func (p *Piano) Init(ports ...int) (err error) {
 	}
 	logger.Infof("Using input device %d and output device %d", p.InputDevice, p.OutputDevice)
 
-	logger.Info("Opening stream")
-	p.stream, err = portmidi.NewOutputStream(p.OutputDevice, 1024, 0)
+	logger.Info("Opening output stream")
+	p.outputStream, err = portmidi.NewOutputStream(p.OutputDevice, 1024, 0)
 	if err != nil {
 		if err != nil {
 			logger.WithFields(log.Fields{
@@ -59,12 +60,28 @@ func (p *Piano) Init(ports ...int) (err error) {
 		}
 
 	}
+
+	logger.Info("Opening input stream")
+	p.inputStream, err = portmidi.NewInputStream(p.InputDevice, 1024)
+	if err != nil {
+		if err != nil {
+			logger.WithFields(log.Fields{
+				"msg": "problem getting input stream from device " + string(p.InputDevice),
+			}).Error(err.Error())
+			return
+		}
+
+	}
 	return
 }
 
-// Close will shutdown the stream
+// Close will shutdown the streams
+// and gracefully terminate.
 func (p *Piano) Close() (err error) {
-	return p.stream.Close()
+	p.outputStream.Close()
+	p.inputStream.Close()
+	portmidi.Terminate()
+	return
 }
 
 // PlayNotes will execute a bunch of threads to play notes
@@ -83,7 +100,7 @@ func (p *Piano) PlayNote(note Note, bpm float64) (err error) {
 	logger := log.WithFields(log.Fields{
 		"function": "Piano.PlayNotes",
 	})
-	err = p.stream.WriteShort(0x90, note.Pitch, note.Velocity)
+	err = p.outputStream.WriteShort(0x90, note.Pitch, note.Velocity)
 	if err != nil {
 		logger.WithFields(log.Fields{
 			"p": note.Pitch,
@@ -98,7 +115,7 @@ func (p *Piano) PlayNote(note Note, bpm float64) (err error) {
 		}).Info("on")
 	}
 	time.Sleep(time.Duration(note.Duration/bpm) * time.Minute)
-	err = p.stream.WriteShort(0x80, note.Pitch, note.Velocity)
+	err = p.outputStream.WriteShort(0x80, note.Pitch, note.Velocity)
 	if err != nil {
 		logger.WithFields(log.Fields{
 			"p": note.Pitch,
