@@ -36,12 +36,13 @@ type Player struct {
 	AI *MarkovAI
 	// BeatsOfSilence waits this number of beats before asking
 	// the AI for an improvisation
-	BeatsOfSilence        int
-	CurrentBeatsOfSilence int
+	BeatsOfSilence float64
+	// LastNote is the beat of the last note played
+	LastNote float64
 }
 
 // Init initializes the parameters and connects up the piano
-func (p *Player) Init(bpm float64, beats ...int) (err error) {
+func (p *Player) Init(bpm float64, beats ...float64) (err error) {
 
 	logger := log.WithFields(log.Fields{
 		"function": "Player.Init",
@@ -69,7 +70,7 @@ func (p *Player) Init(bpm float64, beats ...int) (err error) {
 	} else {
 		p.BeatsOfSilence = 10
 	}
-	p.CurrentBeatsOfSilence = 0
+	p.LastNote = 0
 	return
 }
 
@@ -115,11 +116,25 @@ func (p *Player) Start() {
 				logger.Debugf("beat %2.0f", p.Beat)
 			}
 			p.Beat += 0.015625
+			p.LastNote += 0.015625
+			go p.Emit(p.Beat)
+			// TODO: If the p.Beat - p.LastNote > p.BeatsOfSilence
+			// THEN go p.Improvise() -> generates new markov model and then generates
+			// notes to emit
+
 		case <-doneChan:
 			fmt.Println("Done")
 			return
 		}
 	}
+}
+
+// Emit will play/stop notes depending on the current beat.
+// This should be run in a separate thread.
+func (p *Player) Emit(beat float64) {
+	// TODO: Check if beat is in any jsonstore for needint go be played
+	// If it is, play the note
+
 }
 
 // Listen tells the player to listen to events from the
@@ -133,6 +148,13 @@ func (p *Player) Listen() {
 	ch := p.Piano.inputStream.Listen()
 	for {
 		event := <-ch
-		logger.Infof("Event %v", event)
+		logger.WithFields(log.Fields{
+			"timestamp": event.Timestamp,
+			"data1":     event.Data1,
+			"data2":     event.Data2,
+			"status":    event.Status,
+		}).Info("key event")
+		// TODO: go p.AddEvent()
+		// TODO: if the key is ON, then p.LastNote = p.Beat
 	}
 }
