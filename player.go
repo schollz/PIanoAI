@@ -11,7 +11,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// Player is the main structure
+// Player is the main structure which facilitates the Piano, and the AI.
+// The Player spawns threads for listening to events on the Piano, and also
+// spawns threads for playing notes on the piano. It also spawns threads
+// for doing the machine learning and using the results.
 type Player struct {
 	// BPM is the beats per minute
 	BPM float64
@@ -29,8 +32,6 @@ type Player struct {
 	// ChordsPlaying is a map of all the chords currently being
 	// played
 	ChordsPlaying *jsonstore.JSONStore
-
-	// AI STUFF
 
 	// AI stores the AI being used
 	AI *MarkovAI
@@ -60,7 +61,7 @@ func (p *Player) Init(bpm float64, beats ...float64) (err error) {
 
 	p.ChordsToPlay = new(jsonstore.JSONStore)
 	p.ChordHistory = new(jsonstore.JSONStore)
-	// TODO: Optional to load chord history
+	// TODO: Option to load chord history
 	p.ChordsPlaying = new(jsonstore.JSONStore)
 
 	p.AI = new(MarkovAI)
@@ -87,7 +88,9 @@ func (p *Player) Close() (err error) {
 	return
 }
 
-// Start initializes the metronome which emits
+// Start initializes the metronome which keeps track of beats
+// Each beat will start new threads to Emit new chords, and/or
+// generate new Improvisation
 func (p *Player) Start() {
 	logger := log.WithFields(log.Fields{
 		"function": "Player.Start",
@@ -119,7 +122,7 @@ func (p *Player) Start() {
 			p.LastNote += 0.015625
 			go p.Emit(p.Beat)
 			// TODO: If the p.Beat - p.LastNote > p.BeatsOfSilence
-			// THEN go p.Improvise() -> generates new markov model and then generates
+			// THEN go p.Improvisation() -> generates new markov model and then generates
 			// notes to emit
 
 		case <-doneChan:
