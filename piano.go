@@ -3,8 +3,8 @@ package main
 import (
 	"time"
 
-	"github.com/apex/log"
 	"github.com/schollz/portmidi"
+	log "github.com/sirupsen/logrus"
 )
 
 // Piano is the AI class for the piano
@@ -78,8 +78,14 @@ func (p *Piano) Init(ports ...int) (err error) {
 // Close will shutdown the streams
 // and gracefully terminate.
 func (p *Piano) Close() (err error) {
+	logger := log.WithFields(log.Fields{
+		"function": "Piano.Close",
+	})
+	logger.Debug("Closing output stream")
 	p.outputStream.Close()
+	logger.Debug("Closing input stream")
 	p.inputStream.Close()
+	logger.Debug("Terminating portmidi")
 	portmidi.Terminate()
 	return
 }

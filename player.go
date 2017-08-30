@@ -7,8 +7,8 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/apex/log"
 	"github.com/schollz/jsonstore"
+	log "github.com/sirupsen/logrus"
 )
 
 // Player is the main structure
@@ -42,6 +42,7 @@ type Player struct {
 
 // Init initializes the parameters and connects up the piano
 func (p *Player) Init(bpm float64, beats ...int) (err error) {
+
 	logger := log.WithFields(log.Fields{
 		"function": "Player.Init",
 	})
@@ -77,7 +78,7 @@ func (p *Player) Close() (err error) {
 	logger := log.WithFields(log.Fields{
 		"function": "Player.Close",
 	})
-	logger.Info("Closing piano...")
+	logger.Debug("Closing piano...")
 	err = p.Piano.Close()
 	if err != nil {
 		logger.Error(err.Error())
@@ -97,8 +98,9 @@ func (p *Player) Start() {
 	signal.Notify(c, os.Interrupt)
 	go func() {
 		for sig := range c {
-			logger.Infof("%+v", sig)
+			logger.Debugf("%+v", sig)
 			// sig is a ^C, handle it
+			p.Close()
 			doneChan <- true
 		}
 	}()
@@ -110,7 +112,7 @@ func (p *Player) Start() {
 		select {
 		case <-tickChan:
 			if p.Beat == math.Trunc(p.Beat) {
-				logger.Infof("beat %2.0f", p.Beat)
+				logger.Debugf("beat %2.0f", p.Beat)
 			}
 			p.Beat += 0.015625
 		case <-doneChan:
