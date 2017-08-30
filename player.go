@@ -5,6 +5,7 @@ import (
 	"math"
 	"os"
 	"os/signal"
+	"strconv"
 	"time"
 
 	"github.com/schollz/jsonstore"
@@ -60,8 +61,11 @@ func (p *Player) Init(bpm float64, beats ...float64) (err error) {
 	}
 
 	p.ChordsToPlay = new(jsonstore.JSONStore)
-	p.ChordHistory = new(jsonstore.JSONStore)
-	// TODO: Option to load chord history
+	p.ChordHistory, errOpen = jsonstore.Open("chordhistory.json")
+	if errOpen != nil {
+		p.ChordHistory = new(jsonstore.JSONStore)
+	}
+
 	p.ChordsPlaying = new(jsonstore.JSONStore)
 
 	p.AI = new(MarkovAI)
@@ -121,9 +125,10 @@ func (p *Player) Start() {
 			p.Beat += 0.015625
 			p.LastNote += 0.015625
 			go p.Emit(p.Beat)
-			// TODO: If the p.Beat - p.LastNote > p.BeatsOfSilence
-			// THEN go p.Improvisation() -> generates new markov model and then generates
-			// notes to emit
+
+			if p.Beat-p.LastNote > p.BeatsOfSilence {
+				go p.Improvisation()
+			}
 
 		case <-doneChan:
 			fmt.Println("Done")
@@ -132,12 +137,22 @@ func (p *Player) Start() {
 	}
 }
 
+// Improvisation generates an improvisation from the AI
+// and loads into the next beats to be playing
+func (p *Player) Improvisation() {
+
+}
+
 // Emit will play/stop notes depending on the current beat.
 // This should be run in a separate thread.
 func (p *Player) Emit(beat float64) {
-	// TODO: Check if beat is in any jsonstore for needint go be played
-	// If it is, play the note
-
+	beatStr, _ := strconv.FormatFloat(beat, 'E', -1, 64)
+	var chordToPlay Chord
+	err := p.ChordsToPlay.Get(beatStr, &chordToPlay)
+	if err == nil {
+		p.Piano.PlayChord(chordToPlay, p.BPM)
+		p.LastNote = beat
+	}
 }
 
 // Listen tells the player to listen to events from the
@@ -157,8 +172,13 @@ func (p *Player) Listen() {
 			"data2":     event.Data2,
 			"status":    event.Status,
 		}).Info("key event")
+		// TODO: Cast the data to a Note
+
 		// TODO: go p.AddEvent()
+
 		// TODO: if the key is ON, then p.LastNote = p.Beat
+
 		// TODO: if its the bottom key, do a save
+		// go jsonstore.Save(p.ChordHistory, "chordhistory.json")
 	}
 }

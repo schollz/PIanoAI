@@ -90,8 +90,8 @@ func (p *Piano) Close() (err error) {
 	return
 }
 
-// PlayNotes will execute a bunch of threads to play notes
-func (p *Piano) PlayNotes(chord Chord, bpm float64) (err error) {
+// PlayChord will execute a bunch of threads to play notes
+func (p *Piano) PlayChord(chord Chord, bpm float64) (err error) {
 	for _, note := range chord.Notes {
 		go p.PlayNote(note, bpm)
 	}
