@@ -11,6 +11,7 @@ import (
 type Piano struct {
 	InputDevice  portmidi.DeviceID
 	OutputDevice portmidi.DeviceID
+	stream       *portmidi.Stream
 }
 
 // Init sets the device ports. Optionally you can
@@ -19,7 +20,7 @@ func (p *Piano) Init(ports ...int) (err error) {
 	logger := log.WithFields(log.Fields{
 		"function": "Piano.Init",
 	})
-	logger.Debug("Initializing portmidi...")
+	logger.Info("Initializing portmidi...")
 	err = portmidi.Initialize()
 	if err != nil {
 		logger.WithFields(log.Fields{
@@ -28,7 +29,7 @@ func (p *Piano) Init(ports ...int) (err error) {
 		return
 	}
 	numDevices := portmidi.CountDevices()
-	logger.Debugf("Found %d devices", numDevices)
+	logger.Infof("Found %d devices", numDevices)
 	for i := 0; i < numDevices; i++ {
 		deviceInfo := portmidi.Info(portmidi.DeviceID(i))
 		var inputOutput string
@@ -46,34 +47,70 @@ func (p *Piano) Init(ports ...int) (err error) {
 		p.OutputDevice = portmidi.DeviceID(ports[1])
 	}
 	logger.Infof("Using input device %d and output device %d", p.InputDevice, p.OutputDevice)
+
+	logger.Info("Opening stream")
+	p.stream, err = portmidi.NewOutputStream(p.OutputDevice, 1024, 0)
+	if err != nil {
+		if err != nil {
+			logger.WithFields(log.Fields{
+				"msg": "problem getting output stream from device " + string(p.OutputDevice),
+			}).Error(err.Error())
+			return
+		}
+
+	}
 	return
 }
 
-func (p *Piano) PlayNotes() (err error) {
+// Close will shutdown the stream
+func (p *Piano) Close() (err error) {
+	return p.stream.Close()
+}
+
+// PlayNotes will execute a bunch of threads to play notes
+func (p *Piano) PlayNotes(chord Chord, bpm float64) (err error) {
+	for _, note := range chord.Notes {
+		go p.PlayNote(note, bpm)
+	}
+	return
+}
+
+// PlayNote will play a single note. Hopefully this will work
+// in a thread, but that remains to be seen (TODO).
+// To turn on a note it will send 0x90 to the stream.
+// To turn off a note it will send 0x80 to the stream.
+func (p *Piano) PlayNote(note Note, bpm float64) (err error) {
 	logger := log.WithFields(log.Fields{
 		"function": "Piano.PlayNotes",
 	})
-	out, err := portmidi.NewOutputStream(p.OutputDevice, 1024, 0)
+	err = p.stream.WriteShort(0x90, note.Pitch, note.Velocity)
 	if err != nil {
 		logger.WithFields(log.Fields{
-			"msg": "output stream failed to connect",
+			"p": note.Pitch,
+			"v": note.Velocity,
+			"d": note.Duration,
 		}).Error(err.Error())
-		return
+	} else {
+		logger.WithFields(log.Fields{
+			"p": note.Pitch,
+			"v": note.Velocity,
+			"d": note.Duration,
+		}).Info("on")
 	}
-	logger.Info("Playing notes..")
-	// note on events to play C major chord
-	out.WriteShort(0x90, 60, 100)
-	out.WriteShort(0x90, 64, 100)
-	out.WriteShort(0x90, 67, 100)
-
-	// notes will be sustained for 2 seconds
-	time.Sleep(2 * time.Second)
-
-	// note off events
-	out.WriteShort(0x80, 60, 100)
-	out.WriteShort(0x80, 64, 100)
-	out.WriteShort(0x80, 67, 100)
-
-	out.Close()
+	time.Sleep(time.Duration(note.Duration/bpm) * time.Minute)
+	err = p.stream.WriteShort(0x80, note.Pitch, note.Velocity)
+	if err != nil {
+		logger.WithFields(log.Fields{
+			"p": note.Pitch,
+			"v": note.Velocity,
+			"d": note.Duration,
+		}).Error(err.Error())
+	} else {
+		logger.WithFields(log.Fields{
+			"p": note.Pitch,
+			"v": note.Velocity,
+			"d": note.Duration,
+		}).Info("off")
+	}
 	return
 }
