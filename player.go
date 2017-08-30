@@ -61,6 +61,7 @@ func (p *Player) Init(bpm float64, beats ...float64) (err error) {
 	}
 
 	p.ChordsToPlay = new(jsonstore.JSONStore)
+	var errOpen error
 	p.ChordHistory, errOpen = jsonstore.Open("chordhistory.json")
 	if errOpen != nil {
 		p.ChordHistory = new(jsonstore.JSONStore)
@@ -146,7 +147,7 @@ func (p *Player) Improvisation() {
 // Emit will play/stop notes depending on the current beat.
 // This should be run in a separate thread.
 func (p *Player) Emit(beat float64) {
-	beatStr, _ := strconv.FormatFloat(beat, 'E', -1, 64)
+	beatStr := strconv.FormatFloat(beat, 'E', -1, 64)
 	var chordToPlay Chord
 	err := p.ChordsToPlay.Get(beatStr, &chordToPlay)
 	if err == nil {
