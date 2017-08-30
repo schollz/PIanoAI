@@ -159,5 +159,6 @@ func (p *Player) Listen() {
 		}).Info("key event")
 		// TODO: go p.AddEvent()
 		// TODO: if the key is ON, then p.LastNote = p.Beat
+		// TODO: if its the bottom key, do a save
 	}
 }

@@ -21,7 +21,7 @@ func (p *Piano) Init(ports ...int) (err error) {
 	logger := log.WithFields(log.Fields{
 		"function": "Piano.Init",
 	})
-	logger.Info("Initializing portmidi...")
+	logger.Debug("Initializing portmidi...")
 	err = portmidi.Initialize()
 	if err != nil {
 		logger.WithFields(log.Fields{
@@ -30,7 +30,7 @@ func (p *Piano) Init(ports ...int) (err error) {
 		return
 	}
 	numDevices := portmidi.CountDevices()
-	logger.Infof("Found %d devices", numDevices)
+	logger.Debugf("Found %d devices", numDevices)
 	for i := 0; i < numDevices; i++ {
 		deviceInfo := portmidi.Info(portmidi.DeviceID(i))
 		var inputOutput string
@@ -41,7 +41,7 @@ func (p *Piano) Init(ports ...int) (err error) {
 			inputOutput = "input"
 			p.InputDevice = portmidi.DeviceID(i)
 		}
-		logger.Infof("%d) %s %s %s", i, deviceInfo.Interface, deviceInfo.Name, inputOutput)
+		logger.Debugf("%d) %s %s %s", i, deviceInfo.Interface, deviceInfo.Name, inputOutput)
 	}
 	if len(ports) == 2 {
 		p.InputDevice = portmidi.DeviceID(ports[0])
@@ -49,7 +49,7 @@ func (p *Piano) Init(ports ...int) (err error) {
 	}
 	logger.Infof("Using input device %d and output device %d", p.InputDevice, p.OutputDevice)
 
-	logger.Info("Opening output stream")
+	logger.Debug("Opening output stream")
 	p.outputStream, err = portmidi.NewOutputStream(p.OutputDevice, 1024, 0)
 	if err != nil {
 		if err != nil {
@@ -61,7 +61,7 @@ func (p *Piano) Init(ports ...int) (err error) {
 
 	}
 
-	logger.Info("Opening input stream")
+	logger.Debug("Opening input stream")
 	p.inputStream, err = portmidi.NewInputStream(p.InputDevice, 1024)
 	if err != nil {
 		if err != nil {
