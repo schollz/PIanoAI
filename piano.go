@@ -92,7 +92,7 @@ func (p *Piano) Close() (err error) {
 }
 
 // PlayNotes will play all the notes
-func (p *Piano) PlayNotes(notes []Note, bpm float64) (err error) {
+func (p *Piano) PlayNotes(notes []Note, bpm int) (err error) {
 	p.Lock()
 	defer p.Unlock()
 	logger := log.WithFields(log.Fields{
@@ -104,7 +104,7 @@ func (p *Piano) PlayNotes(notes []Note, bpm float64) (err error) {
 				"p": note.Pitch,
 				"v": note.Velocity,
 			}).Debug("on")
-			err = p.outputStream.WriteShort(0x90, note.Pitch, note.Velocity)
+			err = p.outputStream.WriteShort(0x90, int64(note.Pitch), int64(note.Velocity))
 			if err != nil {
 				logger.WithFields(log.Fields{
 					"p":   note.Pitch,
@@ -118,7 +118,7 @@ func (p *Piano) PlayNotes(notes []Note, bpm float64) (err error) {
 				"p": note.Pitch,
 				"v": note.Velocity,
 			}).Debug("off")
-			err = p.outputStream.WriteShort(0x80, note.Pitch, note.Velocity)
+			err = p.outputStream.WriteShort(0x80, int64(note.Pitch), int64(note.Velocity))
 			if err != nil {
 				logger.WithFields(log.Fields{
 					"p":   note.Pitch,

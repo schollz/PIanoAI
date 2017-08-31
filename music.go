@@ -44,7 +44,8 @@ func (p Notes) Swap(i, j int) {
 
 // Music stores all the notes that will be played / were already played
 type Music struct {
-	Notes map[string]map[string]Note // Notes[TIMEPLAYED(on/off)][PITCH] = Note
+	// Notes map: tick -> pitch -> note
+	Notes map[int]map[int]Note
 	sync.RWMutex
 }
 
@@ -52,7 +53,7 @@ type Music struct {
 func NewMusic() *Music {
 	m := new(Music)
 	m.Lock()
-	m.Notes = make(map[string]map[string]Note)
+	m.Notes = make(map[int]map[int]Note)
 	m.Unlock()
 	return m
 }
@@ -74,23 +75,23 @@ func OpenMusic(filename string) (*Music, error) {
 func (m *Music) AddNote(n Note) (err error) {
 	m.Lock()
 	defer m.Unlock()
-	if _, hasTime := m.Notes[n.Time()]; hasTime {
-		if _, hasNote := m.Notes[n.Time()][n.Name()]; hasNote {
+	if _, hasTime := m.Notes[n.Beat]; hasTime {
+		if _, hasNote := m.Notes[n.Beat][n.Pitch]; hasNote {
 			return
 		}
 	} else {
-		m.Notes[n.Time()] = make(map[string]Note)
+		m.Notes[n.Beat] = make(map[int]Note)
 	}
-	m.Notes[n.Time()][n.Name()] = n
+	m.Notes[n.Beat][n.Pitch] = n
 	return
 }
 
 // GetNotes retrieve notes in music in a thread-safe way
-func (m *Music) GetNotes(beat float64) (hasNotes bool, notes []Note) {
+func (m *Music) GetNotes(beat int) (hasNotes bool, notes []Note) {
 	m.RLock()
 	defer m.RUnlock()
-	var notesMap map[string]Note
-	notesMap, hasNotes = m.Notes[fmt.Sprintf("%2.5f", beat)]
+	var notesMap map[int]Note
+	notesMap, hasNotes = m.Notes[beat]
 	if !hasNotes {
 		return
 	}

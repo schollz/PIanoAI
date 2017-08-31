@@ -15,9 +15,9 @@ import (
 // for doing the machine learning and using the results.
 type Player struct {
 	// BPM is the beats per minute
-	BPM float64
-	// Beat counts the beat number
-	Beat float64
+	BPM int
+	// Beat counts the number of 1/64 beats
+	Beat int
 	// Key stores the key of the song (TODO: Add in key-signature constraints)
 	Key string
 
@@ -32,13 +32,13 @@ type Player struct {
 	AI *MarkovAI
 	// BeatsOfSilence waits this number of beats before asking
 	// the AI for an improvisation
-	BeatsOfSilence float64
+	BeatsOfSilence int
 	// LastNote is the beat of the last note played
-	LastNote float64
+	LastNote int
 }
 
 // Init initializes the parameters and connects up the piano
-func (p *Player) Init(bpm float64, beats ...float64) (err error) {
+func (p *Player) Init(bpm int, beats ...int) (err error) {
 
 	logger := log.WithFields(log.Fields{
 		"function": "Player.Init",
@@ -113,15 +113,15 @@ func (p *Player) Start() {
 
 	p.Beat = 0
 	tickChan := time.NewTicker(time.Millisecond * time.Duration((1000*60/p.BPM)/64)).C
-	logger.Infof("Tick size: ~%s", time.Duration(time.Millisecond*time.Duration((1000*60/p.BPM)/64)))
+	logger.Infof("BPM:  %d, tick size: %2.1f ms", p.BPM, time.Duration(time.Millisecond*time.Duration((1000*60/float64(p.BPM))/64)).Seconds()*1000)
 	for {
 		select {
 		case <-tickChan:
 			// if p.Beat == math.Trunc(p.Beat) {
 			// 	logger.Debugf("beat %2.0f", p.Beat)
 			// }
-			p.Beat += 0.015625
-			p.LastNote += 0.015625
+			p.Beat += 1
+			p.LastNote += 1
 			go p.Emit(p.Beat)
 
 			if p.Beat-p.LastNote > p.BeatsOfSilence {
@@ -143,7 +143,7 @@ func (p *Player) Improvisation() {
 
 // Emit will play/stop notes depending on the current beat.
 // This should be run in a separate thread.
-func (p *Player) Emit(beat float64) {
+func (p *Player) Emit(beat int) {
 	hasNotes, notes := p.MusicFuture.GetNotes(beat)
 	if hasNotes {
 		go p.Piano.PlayNotes(notes, p.BPM)
@@ -163,8 +163,8 @@ func (p *Player) Listen() {
 		event := <-ch
 		note := Note{
 			On:       event.Data2 > 0,
-			Pitch:    event.Data1,
-			Velocity: event.Data2,
+			Pitch:    int(event.Data1),
+			Velocity: int(event.Data2),
 			Beat:     p.Beat,
 		}
 
