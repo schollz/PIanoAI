@@ -43,8 +43,8 @@ func (m *MarkovAI) Learn() (err error) {
 
 // Lick generates a sequence of chords using the Markov
 // probabilities. Must run Learn() beforehand.
-func (m *MarkovAI) Lick() (lick map[string]Chord, err error) {
-	lick = make(map[string]Chord)
+func (m *MarkovAI) Lick() (lick *Music, err error) {
+	lick = new(Music)
 	if !m.HasLearned || m.IsLearning {
 		err = errors.New("Learning must be finished")
 		return

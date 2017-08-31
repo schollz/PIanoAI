@@ -91,26 +91,24 @@ func (p *Piano) Close() (err error) {
 	return
 }
 
-// PlayChord will execute a bunch of threads to play notes
-func (p *Piano) PlayChord(chord Chord, bpm float64) (err error) {
+// PlayNotes will play all the notes
+func (p *Piano) PlayNotes(notes []Note, bpm float64) (err error) {
 	p.Lock()
 	defer p.Unlock()
 	logger := log.WithFields(log.Fields{
 		"function": "Piano.PlayNotes",
 	})
-	for _, note := range chord.Notes {
-		if note.Velocity > 0 {
+	for _, note := range notes {
+		if note.On {
 			logger.WithFields(log.Fields{
 				"p": note.Pitch,
 				"v": note.Velocity,
-				"d": note.Duration,
 			}).Debug("on")
 			err = p.outputStream.WriteShort(0x90, note.Pitch, note.Velocity)
 			if err != nil {
 				logger.WithFields(log.Fields{
 					"p":   note.Pitch,
 					"v":   note.Velocity,
-					"d":   note.Duration,
 					"msg": "problem turning on",
 				}).Error(err.Error())
 				return
