@@ -1,7 +1,11 @@
 package main
 
-import "fmt"
-import "sync"
+import (
+	"fmt"
+	"sync"
+
+	log "github.com/sirupsen/logrus"
+)
 
 // Note carries the pitch, velocity, and duration information
 // of a single press
@@ -21,7 +25,7 @@ func (n *Note) Name() string {
 	return fmt.Sprintf("%d", n.Pitch)
 }
 
-// Music stores all the notes that will be played
+// Music stores all the notes that will be played / were already played
 type Music struct {
 	Notes map[string]map[string]Note // Notes[TIMEPLAYED(on/off)][PITCH] = Note
 	sync.RWMutex
@@ -37,16 +41,18 @@ func NewMusic() *Music {
 }
 
 // AddNote will add a note in a thread-safe way.
-func (m *Music) AddNote(n Note) {
+func (m *Music) AddNote(n Note) (err error) {
 	m.Lock()
 	defer m.Unlock()
 	if _, hasTime := m.Notes[n.Time()]; hasTime {
-		if _, hasNote := m.Notes[n.Time()][n.Name()]; !hasNote {
-			m.Notes[n.Time()][n.Name()] = n
+		if _, hasNote := m.Notes[n.Time()][n.Name()]; hasNote {
+			return
 		}
 	} else {
 		m.Notes[n.Time()] = make(map[string]Note)
 	}
+	m.Notes[n.Time()][n.Name()] = n
+	return
 }
 
 // GetNotes retrieve notes in music in a thread-safe way
@@ -63,6 +69,24 @@ func (m *Music) GetNotes(beat float64) (hasNotes bool, notes []Note) {
 	for _, note := range notesMap {
 		notes[i] = note
 		i++
+	}
+	return
+}
+
+// GetNotes retrieve notes in music in a thread-safe way
+func (m *Music) GetAllNotes() (notes []Note) {
+	logger := log.WithFields(log.Fields{
+		"function": "Music.GetAllNotes",
+	})
+	m.RLock()
+	defer m.RUnlock()
+	notes = []Note{}
+	for beat := range m.Notes {
+		logger.Debug(beat)
+		for pitch := range m.Notes[beat] {
+			logger.Debug(pitch)
+			notes = append(notes, m.Notes[beat][pitch])
+		}
 	}
 	return
 }

@@ -23,13 +23,10 @@ type Player struct {
 
 	// Piano is the piano that does the playing, the MIDI keyboard
 	Piano *Piano
-	// ChordsToPlay is a map of future chords to play
+	// MusicFuture is a map of future chords to play
 	MusicFuture *Music
-	// ChordHistory is a map of all the previous notes played
+	// MusicHistory is a map of all the previous notes played
 	MusicHistory *Music
-	// ChordsPlaying is a map of all the chords currently being
-	// played
-	MusicPlaying *Music
 
 	// AI stores the AI being used
 	AI *MarkovAI
@@ -141,9 +138,15 @@ func (p *Player) Improvisation() {
 // Emit will play/stop notes depending on the current beat.
 // This should be run in a separate thread.
 func (p *Player) Emit(beat float64) {
+	logger := log.WithFields(log.Fields{
+		"function": "Player.Emit",
+	})
+
+	start := time.Now()
 	hasNotes, notes := p.MusicFuture.GetNotes(beat)
 	if hasNotes {
 		go p.Piano.PlayNotes(notes, p.BPM)
+		logger.Debugf("Finished %s", time.Since(start).String())
 	}
 }
 
@@ -166,12 +169,23 @@ func (p *Player) Listen() {
 		}
 
 		if note.Pitch == 21 {
+			if !note.On {
+				continue
+			}
 			logger.Info("Saving chord_history.json")
 		} else if note.Pitch == 22 {
+			if !note.On {
+				continue
+			}
 			logger.Info("Playing back history")
+			for _, note := range p.MusicHistory.GetAllNotes() {
+				logger.Infof("Adding %+v to future", note)
+				p.MusicFuture.AddNote(note)
+			}
+			p.Beat = 0
 		} else {
 			logger.Infof("Adding %+v", note)
-			p.MusicHistory.AddNote(note)
+			go p.MusicHistory.AddNote(note)
 		}
 	}
 }
