@@ -5,28 +5,26 @@ import "fmt"
 // Note carries the pitch, velocity, and duration information
 // of a single press
 type Note struct {
+	On       bool
 	Pitch    int64
 	Velocity int64
-	Duration float64 // Duration is in beats
+	Start    float64
+	Stop     float64
+}
+
+// IDs must be unique in the song
+func (n *Note) ID() string {
+	if n.On {
+		return fmt.Sprintf("%d-%d", n.Pitch, n.Start)
+	} else {
+		return fmt.Sprintf("%d-%d", n.Pitch, n.End)
+	}
 }
 
 func (n *Note) String() string {
 	return fmt.Sprintf("Pitch: %d Velocity: %d Duration: %d", n.Pitch, n.Velocity, n.Duration)
 }
 
-// Chord contains information one or multiple notes.
-// Chords have a start, in which all the notes are started.
-// After the start, the duration of each note depends on
-// each individual note.
-type Chord struct {
-	Notes []Note
-	Start float64 // Start is in beats
-}
-
-func (c *Chord) String() string {
-	s := fmt.Sprintf("%d Notes", len(c.Notes))
-	for _, note := range c.Notes {
-		s += note.String()
-	}
-	return s
+type Music struct {
+	Notes map[float64]map[int64]Note // Notes[TIMEPLAYED(on/off)][PITCH] = Note
 }
