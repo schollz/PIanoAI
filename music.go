@@ -1,7 +1,9 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"sync"
 
 	log "github.com/sirupsen/logrus"
@@ -38,6 +40,19 @@ func NewMusic() *Music {
 	m.Notes = make(map[string]map[string]Note)
 	m.Unlock()
 	return m
+}
+
+// OpenMusic opens a previous music
+func OpenMusic(filename string) (*Music, error) {
+	bMusic, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return new(Music), err
+	}
+	m := new(Music)
+	m.Lock()
+	err = json.Unmarshal(bMusic, &m.Notes)
+	m.Unlock()
+	return m, err
 }
 
 // AddNote will add a note in a thread-safe way.
@@ -89,4 +104,14 @@ func (m *Music) GetAllNotes() (notes []Note) {
 		}
 	}
 	return
+}
+
+func (m *Music) Save(filename string) (err error) {
+	m.RLock()
+	defer m.RUnlock()
+	bMusic, err := json.Marshal(m.Notes)
+	if err != nil {
+		return err
+	}
+	return ioutil.WriteFile(filename, bMusic, 0755)
 }

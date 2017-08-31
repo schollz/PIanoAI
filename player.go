@@ -55,8 +55,14 @@ func (p *Player) Init(bpm float64, beats ...float64) (err error) {
 	}
 
 	p.MusicFuture = NewMusic()
-	p.MusicHistory = NewMusic()
-	p.MusicPlaying = NewMusic()
+	var errOpening error
+	p.MusicHistory, errOpening = OpenMusic("music_history.json")
+	if errOpening != nil {
+		logger.Warn(errOpening.Error())
+		p.MusicHistory = NewMusic()
+	} else {
+		logger.Info("Loaded previous music history")
+	}
 
 	p.AI = new(MarkovAI)
 	if len(beats) == 1 {
@@ -138,15 +144,9 @@ func (p *Player) Improvisation() {
 // Emit will play/stop notes depending on the current beat.
 // This should be run in a separate thread.
 func (p *Player) Emit(beat float64) {
-	logger := log.WithFields(log.Fields{
-		"function": "Player.Emit",
-	})
-
-	start := time.Now()
 	hasNotes, notes := p.MusicFuture.GetNotes(beat)
 	if hasNotes {
 		go p.Piano.PlayNotes(notes, p.BPM)
-		logger.Debugf("Finished %s", time.Since(start).String())
 	}
 }
 
@@ -172,7 +172,8 @@ func (p *Player) Listen() {
 			if !note.On {
 				continue
 			}
-			logger.Info("Saving chord_history.json")
+			p.MusicHistory.Save("music_history.json")
+			logger.Info("Saved music_history.json")
 		} else if note.Pitch == 22 {
 			if !note.On {
 				continue
