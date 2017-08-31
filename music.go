@@ -13,9 +13,9 @@ import (
 // of a single press
 type Note struct {
 	On       bool
-	Pitch    int64
-	Velocity int64
-	Beat     float64
+	Pitch    int
+	Velocity int
+	Beat     int
 }
 
 // Time returns when it will be played (or turned off)
@@ -25,6 +25,21 @@ func (n *Note) Time() string {
 
 func (n *Note) Name() string {
 	return fmt.Sprintf("%d", n.Pitch)
+}
+
+// Notes is a structure for sorting the notes based on current beat
+type Notes []Note
+
+func (p Notes) Len() int {
+	return len(p)
+}
+
+func (p Notes) Less(i, j int) bool {
+	return p[i].Beat < p[j].Beat
+}
+
+func (p Notes) Swap(i, j int) {
+	p[i], p[j] = p[j], p[i]
 }
 
 // Music stores all the notes that will be played / were already played
