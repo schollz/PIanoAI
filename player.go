@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"math"
 	"os"
 	"os/signal"
 	"strconv"
@@ -62,9 +61,14 @@ func (p *Player) Init(bpm float64, beats ...float64) (err error) {
 
 	p.ChordsToPlay = new(jsonstore.JSONStore)
 	var errOpen error
-	p.ChordHistory, errOpen = jsonstore.Open("chordhistory.json")
+	p.ChordHistory, errOpen = jsonstore.Open("chord_history.json")
 	if errOpen != nil {
+		logger.WithFields(log.Fields{
+			"msg": "Could not open chord history, making new",
+		}).Warn(errOpen.Error())
 		p.ChordHistory = new(jsonstore.JSONStore)
+	} else {
+		logger.Infof("Loaded %d chords from history", len(p.ChordHistory.Keys()))
 	}
 
 	p.ChordsPlaying = new(jsonstore.JSONStore)
@@ -114,15 +118,18 @@ func (p *Player) Start() {
 		}
 	}()
 
+	// start listening
+	go p.Listen()
+
 	p.Beat = 0
 	tickChan := time.NewTicker(time.Millisecond * time.Duration((1000*60/p.BPM)/64)).C
 	logger.Infof("Tick size: ~%s", time.Duration(time.Millisecond*time.Duration((1000*60/p.BPM)/64)))
 	for {
 		select {
 		case <-tickChan:
-			if p.Beat == math.Trunc(p.Beat) {
-				logger.Debugf("beat %2.0f", p.Beat)
-			}
+			// if p.Beat == math.Trunc(p.Beat) {
+			// 	logger.Debugf("beat %2.0f", p.Beat)
+			// }
 			p.Beat += 0.015625
 			p.LastNote += 0.015625
 			go p.Emit(p.Beat)
@@ -151,9 +158,93 @@ func (p *Player) Emit(beat float64) {
 	var chordToPlay Chord
 	err := p.ChordsToPlay.Get(beatStr, &chordToPlay)
 	if err == nil {
+		// TODO: USE SYNC FOR PIANO?
 		p.Piano.PlayChord(chordToPlay, p.BPM)
 		p.LastNote = beat
 	}
+}
+
+// AddChordToPlay will add chords to be played and
+// to be silenced
+func (p *Player) AddChordToPlay(c Chord) (err error) {
+	logger := log.WithFields(log.Fields{
+		"function": "Player.AddChordToPlay",
+	})
+	var c2 Chord
+
+	// handle first notes
+	onChord := Chord{Notes: []Note{}, Start: c.Start}
+	for _, note := range c.Notes {
+		if note.Velocity > 0 {
+			onChord.Notes = append(onChord.Notes, note)
+		}
+	}
+	startString := strconv.FormatFloat(c.Start, 'E', -1, 64)
+	errGet := p.ChordsToPlay.Get(startString, &c2)
+	if errGet == nil {
+		logger.Debug("Combining notes")
+		c2.Notes = append(c2.Notes, onChord.Notes...)
+		err = p.ChordsToPlay.Set(startString, c2)
+		if err != nil {
+			return
+		}
+	} else {
+		err = p.ChordsToPlay.Set(startString, onChord)
+		if err != nil {
+			return
+		}
+	}
+
+	// handle finish notes
+	onChord = Chord{Notes: []Note{}, Start: c.Start}
+	for _, note := range c.Notes {
+		if note.Velocity == 0 {
+			onChord.Notes = append(onChord.Notes, note)
+		}
+	}
+	startString = strconv.FormatFloat(c.Start, 'E', -1, 64)
+	errGet = p.ChordsToPlay.Get(startString, &c2)
+	if errGet == nil {
+		logger.Debug("Combining notes")
+		c2.Notes = append(c2.Notes, onChord.Notes...)
+		err = p.ChordsToPlay.Set(startString, c2)
+		if err != nil {
+			return
+		}
+	} else {
+		err = p.ChordsToPlay.Set(startString, onChord)
+		if err != nil {
+			return
+		}
+	}
+
+	return
+}
+
+// AddChordToHistory will add or merge the specified chord into
+// the history
+func (p *Player) AddChordToHistory(c Chord) (err error) {
+	logger := log.WithFields(log.Fields{
+		"function": "Player.AddChordToHistory",
+	})
+	var c2 Chord
+	historyString := strconv.FormatFloat(c.Start, 'E', -1, 64)
+	errGet := p.ChordHistory.Get(historyString, &c2)
+	if errGet == nil {
+		logger.Debug("Combining notes")
+		c.Notes = append(c.Notes, c2.Notes...)
+	}
+	for _, note := range c.Notes {
+		logger.WithFields(log.Fields{
+			"pitch":    note.Pitch,
+			"duration": note.Duration,
+		}).Debug("adding to history")
+	}
+	err = p.ChordHistory.Set(historyString, c)
+	if err != nil {
+		logger.Error(err.Error())
+	}
+	return
 }
 
 // Listen tells the player to listen to events from the
@@ -168,18 +259,62 @@ func (p *Player) Listen() {
 	for {
 		event := <-ch
 		logger.WithFields(log.Fields{
-			"timestamp": event.Timestamp,
-			"data1":     event.Data1,
-			"data2":     event.Data2,
-			"status":    event.Status,
+			"pitch":    event.Data1,
+			"on":       event.Data2 == 0,
+			"velocity": event.Data2,
 		}).Info("key event")
 		// TODO: Cast the data to a Note
+		note := Note{
+			Pitch:    event.Data1,
+			Velocity: event.Data2,
+			Duration: p.Beat, // save the current beat in the Duration
+		}
 
-		// TODO: go p.AddEvent()
+		if note.Pitch == 21 {
+			logger.Info("Saving chord_history.json")
+			go jsonstore.Save(p.ChordHistory, "chord_history.json")
+			continue
+		} else if note.Pitch == 22 {
+			// Play entire chord history
+			for _, key := range p.ChordHistory.Keys() {
+				var chord Chord
+				p.ChordHistory.Get(key, &chord)
+				p.AddChordToPlay(chord)
+				p.Beat = 0
+			}
+			continue
+		}
 
-		// TODO: if the key is ON, then p.LastNote = p.Beat
+		playingString := strconv.Itoa(int(note.Pitch))
+		if note.Velocity == 0 {
+			p.LastNote = p.Beat
+			var note2 Note
+			errGet := p.ChordsPlaying.Get(playingString, &note2)
+			if errGet == nil {
+				// determine the actual duration
+				note.Duration = note.Duration - note2.Duration
+				// use the previous velocity
+				note.Velocity = note2.Velocity
+				chord := Chord{
+					Notes: []Note{note},
+					Start: note2.Duration, // the previous note duration still contains the beat, not the duration
+				}
+				errAdd := p.AddChordToHistory(chord)
+				if errAdd != nil {
+					logger.Warn(errAdd.Error())
+				}
+				p.ChordsPlaying.Delete(playingString)
 
-		// TODO: if its the bottom key, do a save
-		// go jsonstore.Save(p.ChordHistory, "chordhistory.json")
+			} else {
+				logger.Warn(errGet.Error())
+			}
+		} else {
+			logger.Debugf("Adding '%s' to ChordsPlaying", playingString)
+			errAdd := p.ChordsPlaying.Set(playingString, note)
+			if errAdd != nil {
+				logger.Warn(errAdd.Error())
+			}
+		}
+
 	}
 }

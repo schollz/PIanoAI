@@ -1,8 +1,6 @@
 package main
 
 import (
-	"time"
-
 	"github.com/schollz/portmidi"
 	log "github.com/sirupsen/logrus"
 )
@@ -92,48 +90,29 @@ func (p *Piano) Close() (err error) {
 
 // PlayChord will execute a bunch of threads to play notes
 func (p *Piano) PlayChord(chord Chord, bpm float64) (err error) {
-	for _, note := range chord.Notes {
-		go p.PlayNote(note, bpm)
-	}
-	return
-}
-
-// PlayNote will play a single note. Hopefully this will work
-// in a thread, but that remains to be seen (TODO).
-// To turn on a note it will send 0x90 to the stream.
-// To turn off a note it will send 0x80 to the stream.
-func (p *Piano) PlayNote(note Note, bpm float64) (err error) {
 	logger := log.WithFields(log.Fields{
 		"function": "Piano.PlayNotes",
 	})
-	err = p.outputStream.WriteShort(0x90, note.Pitch, note.Velocity)
-	if err != nil {
-		logger.WithFields(log.Fields{
-			"p": note.Pitch,
-			"v": note.Velocity,
-			"d": note.Duration,
-		}).Error(err.Error())
-	} else {
-		logger.WithFields(log.Fields{
-			"p": note.Pitch,
-			"v": note.Velocity,
-			"d": note.Duration,
-		}).Info("on")
-	}
-	time.Sleep(time.Duration(note.Duration/bpm) * time.Minute)
-	err = p.outputStream.WriteShort(0x80, note.Pitch, note.Velocity)
-	if err != nil {
-		logger.WithFields(log.Fields{
-			"p": note.Pitch,
-			"v": note.Velocity,
-			"d": note.Duration,
-		}).Error(err.Error())
-	} else {
-		logger.WithFields(log.Fields{
-			"p": note.Pitch,
-			"v": note.Velocity,
-			"d": note.Duration,
-		}).Info("off")
+	for _, note := range chord.Notes {
+		if note.Velocity > 0 {
+			logger.WithFields(log.Fields{
+				"p": note.Pitch,
+				"v": note.Velocity,
+			}).Error("on")
+			err = p.outputStream.WriteShort(0x90, note.Pitch, note.Velocity)
+			if err != nil {
+				return
+			}
+		} else {
+			logger.WithFields(log.Fields{
+				"p": note.Pitch,
+				"v": note.Velocity,
+			}).Error("off")
+			err = p.outputStream.WriteShort(0x80, note.Pitch, note.Velocity)
+			if err != nil {
+				return
+			}
+		}
 	}
 	return
 }
