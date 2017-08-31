@@ -9,17 +9,12 @@ type Note struct {
 	On       bool
 	Pitch    int64
 	Velocity int64
-	Start    float64
-	Stop     float64
+	Beat     float64
 }
 
 // Time returns when it will be played (or turned off)
 func (n *Note) Time() string {
-	if n.On {
-		return fmt.Sprintf("%2.5f", n.Start)
-	} else {
-		return fmt.Sprintf("%2.5f", n.Stop)
-	}
+	return fmt.Sprintf("%2.5f", n.Beat)
 }
 
 func (n *Note) Name() string {

@@ -162,8 +162,7 @@ func (p *Player) Listen() {
 			On:       event.Data2 > 0,
 			Pitch:    event.Data1,
 			Velocity: event.Data2,
-			Start:    p.Beat,
-			Stop:     p.Beat,
+			Beat:     p.Beat,
 		}
 
 		if note.Pitch == 21 {
