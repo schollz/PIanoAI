@@ -1,6 +1,8 @@
 package main
 
 import (
+	"sync"
+
 	"github.com/schollz/portmidi"
 	log "github.com/sirupsen/logrus"
 )
@@ -11,6 +13,7 @@ type Piano struct {
 	OutputDevice portmidi.DeviceID
 	outputStream *portmidi.Stream
 	inputStream  *portmidi.Stream
+	sync.Mutex
 }
 
 // Init sets the device ports. Optionally you can
@@ -90,6 +93,8 @@ func (p *Piano) Close() (err error) {
 
 // PlayChord will execute a bunch of threads to play notes
 func (p *Piano) PlayChord(chord Chord, bpm float64) (err error) {
+	p.Lock()
+	defer p.Unlock()
 	logger := log.WithFields(log.Fields{
 		"function": "Piano.PlayNotes",
 	})
@@ -98,18 +103,30 @@ func (p *Piano) PlayChord(chord Chord, bpm float64) (err error) {
 			logger.WithFields(log.Fields{
 				"p": note.Pitch,
 				"v": note.Velocity,
-			}).Error("on")
+				"d": note.Duration,
+			}).Debug("on")
 			err = p.outputStream.WriteShort(0x90, note.Pitch, note.Velocity)
 			if err != nil {
+				logger.WithFields(log.Fields{
+					"p":   note.Pitch,
+					"v":   note.Velocity,
+					"d":   note.Duration,
+					"msg": "problem turning on",
+				}).Error(err.Error())
 				return
 			}
 		} else {
 			logger.WithFields(log.Fields{
 				"p": note.Pitch,
 				"v": note.Velocity,
-			}).Error("off")
+			}).Debug("off")
 			err = p.outputStream.WriteShort(0x80, note.Pitch, note.Velocity)
 			if err != nil {
+				logger.WithFields(log.Fields{
+					"p":   note.Pitch,
+					"v":   note.Velocity,
+					"msg": "problem turning off",
+				}).Error(err.Error())
 				return
 			}
 		}

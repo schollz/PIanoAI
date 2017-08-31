@@ -167,6 +167,7 @@ func (p *Player) Emit(beat float64) {
 // AddChordToPlay will add chords to be played and
 // to be silenced
 func (p *Player) AddChordToPlay(c Chord) (err error) {
+	start := time.Now()
 	logger := log.WithFields(log.Fields{
 		"function": "Player.AddChordToPlay",
 	})
@@ -175,6 +176,10 @@ func (p *Player) AddChordToPlay(c Chord) (err error) {
 	// handle first notes
 	onChord := Chord{Notes: []Note{}, Start: c.Start}
 	for _, note := range c.Notes {
+		logger.WithFields(log.Fields{
+			"p": note.Pitch,
+			"d": note.Duration,
+		}).Debug("adding start note")
 		if note.Velocity > 0 {
 			onChord.Notes = append(onChord.Notes, note)
 		}
@@ -183,6 +188,20 @@ func (p *Player) AddChordToPlay(c Chord) (err error) {
 	errGet := p.ChordsToPlay.Get(startString, &c2)
 	if errGet == nil {
 		logger.Debug("Combining notes")
+		onChord.Notes = []Note{}
+		for _, note := range c.Notes {
+			hasNote := false
+			for _, note2 := range c2.Notes {
+				if note2.Velocity == note.Velocity && note2.Pitch == note.Pitch {
+					hasNote = true
+					break
+				}
+			}
+			if !hasNote {
+				onChord.Notes = append(onChord.Notes, note)
+			}
+		}
+
 		c2.Notes = append(c2.Notes, onChord.Notes...)
 		err = p.ChordsToPlay.Set(startString, c2)
 		if err != nil {
@@ -196,28 +215,41 @@ func (p *Player) AddChordToPlay(c Chord) (err error) {
 	}
 
 	// handle finish notes
-	onChord = Chord{Notes: []Note{}, Start: c.Start}
 	for _, note := range c.Notes {
-		if note.Velocity == 0 {
-			onChord.Notes = append(onChord.Notes, note)
+		logger.WithFields(log.Fields{
+			"p": note.Pitch,
+			"d": note.Duration,
+		}).Debug("adding finish note")
+		note.Velocity = 0
+		offChord := Chord{Notes: []Note{note}, Start: c.Start + note.Duration}
+		startString := strconv.FormatFloat(offChord.Start, 'E', -1, 64)
+		errGet = p.ChordsToPlay.Get(startString, &c2)
+		if errGet == nil {
+			hasNote := false
+			for _, note2 := range c2.Notes {
+				if note2.Velocity == note.Velocity && note2.Pitch == note.Pitch {
+					hasNote = true
+					break
+				}
+			}
+			if hasNote {
+				logger.Debug("Skipping, already have note")
+				continue
+			}
+			logger.Debug("Combining notes")
+			c2.Notes = append(c2.Notes, offChord.Notes...)
+			err = p.ChordsToPlay.Set(startString, c2)
+			if err != nil {
+				return
+			}
+		} else {
+			err = p.ChordsToPlay.Set(startString, offChord)
+			if err != nil {
+				return
+			}
 		}
 	}
-	startString = strconv.FormatFloat(c.Start, 'E', -1, 64)
-	errGet = p.ChordsToPlay.Get(startString, &c2)
-	if errGet == nil {
-		logger.Debug("Combining notes")
-		c2.Notes = append(c2.Notes, onChord.Notes...)
-		err = p.ChordsToPlay.Set(startString, c2)
-		if err != nil {
-			return
-		}
-	} else {
-		err = p.ChordsToPlay.Set(startString, onChord)
-		if err != nil {
-			return
-		}
-	}
-
+	logger.Debug("Took %s", time.Since(start).String())
 	return
 }
 
