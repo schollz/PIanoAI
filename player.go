@@ -171,6 +171,7 @@ func (p *Player) Listen() {
 		} else if note.Pitch == 22 {
 			logger.Info("Playing back history")
 		} else {
+			logger.Infof("Adding %+v", note)
 			p.MusicHistory.AddNote(note)
 		}
 	}
