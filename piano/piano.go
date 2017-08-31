@@ -1,8 +1,9 @@
-package main
+package piano
 
 import (
 	"sync"
 
+	"github.com/schollz/pianoai/music"
 	"github.com/schollz/portmidi"
 	log "github.com/sirupsen/logrus"
 )
@@ -12,13 +13,14 @@ type Piano struct {
 	InputDevice  portmidi.DeviceID
 	OutputDevice portmidi.DeviceID
 	outputStream *portmidi.Stream
-	inputStream  *portmidi.Stream
+	InputStream  *portmidi.Stream
 	sync.Mutex
 }
 
-// Init sets the device ports. Optionally you can
+// New sets the device ports. Optionally you can
 // pass the input and output ports, respectively.
-func (p *Piano) Init(ports ...int) (err error) {
+func New(ports ...int) (p *Piano, err error) {
+	p = new(Piano)
 	logger := log.WithFields(log.Fields{
 		"function": "Piano.Init",
 	})
@@ -63,7 +65,7 @@ func (p *Piano) Init(ports ...int) (err error) {
 	}
 
 	logger.Debug("Opening input stream")
-	p.inputStream, err = portmidi.NewInputStream(p.InputDevice, 1024)
+	p.InputStream, err = portmidi.NewInputStream(p.InputDevice, 1024)
 	if err != nil {
 		if err != nil {
 			logger.WithFields(log.Fields{
@@ -85,14 +87,14 @@ func (p *Piano) Close() (err error) {
 	logger.Debug("Closing output stream")
 	p.outputStream.Close()
 	logger.Debug("Closing input stream")
-	p.inputStream.Close()
+	p.InputStream.Close()
 	logger.Debug("Terminating portmidi")
 	portmidi.Terminate()
 	return
 }
 
 // PlayNotes will play all the notes
-func (p *Piano) PlayNotes(notes []Note, bpm int) (err error) {
+func (p *Piano) PlayNotes(notes []music.Note, bpm int) (err error) {
 	p.Lock()
 	defer p.Unlock()
 	logger := log.WithFields(log.Fields{

@@ -1,4 +1,4 @@
-package main
+package music
 
 import (
 	"encoding/json"
@@ -49,8 +49,8 @@ type Music struct {
 	sync.RWMutex
 }
 
-// NewMusic returns a new object
-func NewMusic() *Music {
+// New returns a new object
+func New() *Music {
 	m := new(Music)
 	m.Lock()
 	m.Notes = make(map[int]map[int]Note)
@@ -59,7 +59,7 @@ func NewMusic() *Music {
 }
 
 // OpenMusic opens a previous music
-func OpenMusic(filename string) (*Music, error) {
+func Open(filename string) (*Music, error) {
 	bMusic, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return new(Music), err
@@ -86,8 +86,8 @@ func (m *Music) AddNote(n Note) (err error) {
 	return
 }
 
-// GetNotes retrieve notes in music in a thread-safe way
-func (m *Music) GetNotes(beat int) (hasNotes bool, notes []Note) {
+// Get retrieve notes in music in a thread-safe way
+func (m *Music) Get(beat int) (hasNotes bool, notes []Note) {
 	m.RLock()
 	defer m.RUnlock()
 	var notesMap map[int]Note
@@ -104,8 +104,8 @@ func (m *Music) GetNotes(beat int) (hasNotes bool, notes []Note) {
 	return
 }
 
-// GetNotes retrieve notes in music in a thread-safe way
-func (m *Music) GetAllNotes() (notes []Note) {
+// GetAll retrieve notes in music in a thread-safe way
+func (m *Music) GetAll() (notes []Note) {
 	logger := log.WithFields(log.Fields{
 		"function": "Music.GetAllNotes",
 	})

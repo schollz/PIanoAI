@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/schollz/pianoai/player"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -18,10 +19,9 @@ func init() {
 
 func main() {
 	var err error
-	player := new(Player)
-	err = player.Init(120)
+	p, err := player.New(120)
 	if err != nil {
 		panic(err)
 	}
-	player.Start()
+	p.Start()
 }

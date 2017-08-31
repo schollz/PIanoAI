@@ -1,15 +1,17 @@
-package main
+package ai
 
 import (
 	"errors"
 	"sort"
+
+	"github.com/schollz/pianoai/music"
 )
 
 // MarkovAI is an implementation of an AI that aims to
 // improvise in realtime. In this implementation, the current
 // history of real playing is used to generate transition
 // probabilities which are used to reconstruct new licks.
-type MarkovAI struct {
+type AI struct {
 	// BeatsBetweenLicks specifies the amount of space
 	// between each lick before adding an "end"
 	BeatsBetweenLicks int
@@ -44,7 +46,8 @@ type MarkovAI struct {
 	notes [][]int
 }
 
-func (m *MarkovAI) Init() {
+func New() (m *AI) {
+	m = new(AI)
 	// matrices initialized to handle all four indices
 	m.matrices = make(map[int]map[int]map[int]int)
 	for i := 0; i <= 3; i++ {
@@ -53,6 +56,7 @@ func (m *MarkovAI) Init() {
 
 	m.coupling = [][]int{{-1, 0, 0, 0}, {0, -1, 0, 0}, {0, 0, -1, 0}, {0, 0, 0, -1}}
 	m.notes = [][]int{}
+	return m
 }
 
 // Couple will take an index and a coupling and
@@ -61,15 +65,15 @@ func (m *MarkovAI) Init() {
 // previous Pitch and previous Velocity, you would
 // use Couple(1,[]int{-1,-1,0,0}),
 // where {0,1,2,3} -> {Pitch,Velocity,Duration,Lag}.
-func (m *MarkovAI) Couple(index int, coupling []int) {
+func (m *AI) Couple(index int, coupling []int) {
 	m.coupling[index] = coupling
 }
 
-func (m *MarkovAI) toggleLearning(l bool) {
+func (m *AI) toggleLearning(l bool) {
 	m.IsLearning = l
 }
 
-func (m *MarkovAI) Analyze(notes Notes) {
+func (m *AI) Analyze(notes music.Notes) {
 	sort.Sort(notes)
 	for i, note1 := range notes {
 		if !note1.On {
@@ -103,7 +107,7 @@ func (m *MarkovAI) Analyze(notes Notes) {
 
 // Learn is for calculating the matricies for the transition
 // probabilities
-func (m *MarkovAI) Learn(notes Notes) (err error) {
+func (m *AI) Learn(notes music.Notes) (err error) {
 
 	m.toggleLearning(true)
 	defer m.toggleLearning(false)
@@ -196,8 +200,8 @@ func (m *MarkovAI) Learn(notes Notes) (err error) {
 
 // Lick generates a sequence of chords using the Markov
 // probabilities. Must run Learn() beforehand.
-func (m *MarkovAI) Lick() (lick *Music, err error) {
-	lick = new(Music)
+func (m *AI) Lick() (lick *music.Music, err error) {
+	lick = music.New()
 	if !m.HasLearned || m.IsLearning {
 		err = errors.New("Learning must be finished")
 		return

@@ -1,4 +1,4 @@
-package main
+package player
 
 import (
 	"fmt"
@@ -6,6 +6,9 @@ import (
 	"os/signal"
 	"time"
 
+	"github.com/schollz/pianoai/ai"
+	"github.com/schollz/pianoai/music"
+	"github.com/schollz/pianoai/piano"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -22,14 +25,15 @@ type Player struct {
 	Key string
 
 	// Piano is the piano that does the playing, the MIDI keyboard
-	Piano *Piano
+	Piano *piano.Piano
 	// MusicFuture is a map of future chords to play
-	MusicFuture *Music
+	MusicFuture *music.Music
 	// MusicHistory is a map of all the previous notes played
-	MusicHistory *Music
+	MusicHistory     *music.Music
+	MusicHistoryFile string
 
 	// AI stores the AI being used
-	AI *MarkovAI
+	AI *ai.AI
 	// BeatsOfSilence waits this number of beats before asking
 	// the AI for an improvisation
 	BeatsOfSilence int
@@ -38,8 +42,8 @@ type Player struct {
 }
 
 // Init initializes the parameters and connects up the piano
-func (p *Player) Init(bpm int, beats ...int) (err error) {
-
+func New(bpm int, beats ...int) (p *Player, err error) {
+	p = new(Player)
 	logger := log.WithFields(log.Fields{
 		"function": "Player.Init",
 	})
@@ -48,23 +52,24 @@ func (p *Player) Init(bpm int, beats ...int) (err error) {
 	p.Beat = 0
 	p.Key = "C"
 
-	p.Piano = new(Piano)
-	err = p.Piano.Init()
+	p.Piano, err = piano.New()
 	if err != nil {
 		return
 	}
 
-	p.MusicFuture = NewMusic()
+	p.MusicFuture = music.New()
 	var errOpening error
-	p.MusicHistory, errOpening = OpenMusic("music_history.json")
+	p.MusicHistoryFile = "music_history.json"
+	p.MusicHistory, errOpening = music.Open(p.MusicHistoryFile)
 	if errOpening != nil {
 		logger.Warn(errOpening.Error())
-		p.MusicHistory = NewMusic()
+		p.MusicHistory = music.New()
 	} else {
 		logger.Info("Loaded previous music history")
 	}
 
-	p.AI = new(MarkovAI)
+	p.AI = ai.New()
+
 	if len(beats) == 1 {
 		p.BeatsOfSilence = beats[0]
 	} else {
@@ -144,7 +149,7 @@ func (p *Player) Improvisation() {
 // Emit will play/stop notes depending on the current beat.
 // This should be run in a separate thread.
 func (p *Player) Emit(beat int) {
-	hasNotes, notes := p.MusicFuture.GetNotes(beat)
+	hasNotes, notes := p.MusicFuture.Get(beat)
 	if hasNotes {
 		go p.Piano.PlayNotes(notes, p.BPM)
 	}
@@ -158,10 +163,10 @@ func (p *Player) Listen() {
 		"function": "Player.Listen",
 	})
 
-	ch := p.Piano.inputStream.Listen()
+	ch := p.Piano.InputStream.Listen()
 	for {
 		event := <-ch
-		note := Note{
+		note := music.Note{
 			On:       event.Data2 > 0,
 			Pitch:    int(event.Data1),
 			Velocity: int(event.Data2),
@@ -172,14 +177,14 @@ func (p *Player) Listen() {
 			if !note.On {
 				continue
 			}
-			p.MusicHistory.Save("music_history.json")
+			p.MusicHistory.Save(p.MusicHistoryFile)
 			logger.Info("Saved music_history.json")
 		} else if note.Pitch == 22 {
 			if !note.On {
 				continue
 			}
 			logger.Info("Playing back history")
-			for _, note := range p.MusicHistory.GetAllNotes() {
+			for _, note := range p.MusicHistory.GetAll() {
 				logger.Infof("Adding %+v to future", note)
 				p.MusicFuture.AddNote(note)
 			}
