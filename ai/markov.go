@@ -7,6 +7,10 @@ import (
 	"github.com/schollz/pianoai/music"
 )
 
+func init() {
+	log.SetLevel(log.DebugLevel)
+}
+
 // MarkovAI is an implementation of an AI that aims to
 // improvise in realtime. In this implementation, the current
 // history of real playing is used to generate transition
