@@ -3,7 +3,7 @@ package piano
 import (
 	"sync"
 
-	"github.com/schollz/pi-piano-ai/music"
+	"github.com/schollz/rpiai-piano/music"
 	"github.com/schollz/portmidi"
 	log "github.com/sirupsen/logrus"
 )

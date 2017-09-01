@@ -6,7 +6,7 @@ import (
 	"math/rand"
 	"sort"
 
-	"github.com/schollz/pi-piano-ai/music"
+	"github.com/schollz/rpiai-piano/music"
 	log "github.com/sirupsen/logrus"
 )
 
