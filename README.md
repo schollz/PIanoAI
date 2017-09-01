@@ -5,17 +5,11 @@
 This is code for providing an augmented piano playing experience. When run, this code will provide computer accompaniment that learns in real-time from the human host pianist. Then the host pianist stops playing for a given amount of time, the computer AI will then improvise in the space using the style learned from the host.
 
 
+# Try it
 
-# Install
-
-## Materials
-
-1. MIDI-enabled keyboard and two-way MIDI adapter
-2. A Raspberry Pi (though Windows / Linux / OS X should also work).
-
-## Setup
-
-3. [install Go](https://golang.org/dl/) on the computer you will use
+1. Get a MIDI-enabled keyboard and two-way MIDI adapter
+2. Get a Raspberry Pi (however, Windows / Linux / OS X should also work).
+3. [Install Go](https://golang.org/dl/) on the computer you will use
 4. Install the `libportmidi` (v. 217) library: 
 
 ### Linux
@@ -30,7 +24,17 @@ This is code for providing an augmented piano playing experience. When run, this
 
 [Download ](https://sourceforge.net/projects/portmedia/files/portmidi/217/pmdefaults-setup-w32-217.zip/download) from [Sourceforge](https://sourceforge.net/projects/portmedia/files/portmidi/217/).
 
+5. Install `rpiai-piano`:
 
+```
+go get github.com/schollz/rpiai-piano
+```
+
+6. Play!
+
+```
+./rpiai-piano
+```
 
 ## TODO
 
@@ -38,6 +42,9 @@ This is code for providing an augmented piano playing experience. When run, this
 - [ ] Allow threshold for using notes for AI. (i.e. AI only generates licks on above middle C, or similar)
 - [ ] Implement minimum distance between notes in AI so that more starts/stops are available.
 - [ ] Put links to code on Youtube videos (link to tree)
+- [ ] If a config file is not present, use default values and create one for next time (and send a message to the user)
+- [ ] Add a new button for reseting the system
+- [ ] Add a function for shutting down
 
 # Acknowledgements
 
