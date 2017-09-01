@@ -6,9 +6,9 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/schollz/pianoai/ai"
-	"github.com/schollz/pianoai/music"
-	"github.com/schollz/pianoai/piano"
+	"github.com/schollz/pi-piano-ai/ai"
+	"github.com/schollz/pi-piano-ai/music"
+	"github.com/schollz/pi-piano-ai/piano"
 	log "github.com/sirupsen/logrus"
 )
 

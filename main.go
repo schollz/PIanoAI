@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/schollz/pianoai/player"
+	"github.com/schollz/pi-piano-ai/player"
 	log "github.com/sirupsen/logrus"
 )
 

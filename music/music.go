@@ -109,13 +109,12 @@ func (m *Music) GetAll() (notes []Note) {
 	logger := log.WithFields(log.Fields{
 		"function": "Music.GetAllNotes",
 	})
+	logger.Debug("Getting all")
 	m.RLock()
 	defer m.RUnlock()
 	notes = []Note{}
 	for beat := range m.Notes {
-		logger.Debug(beat)
 		for pitch := range m.Notes[beat] {
-			logger.Debug(pitch)
 			notes = append(notes, m.Notes[beat][pitch])
 		}
 	}
