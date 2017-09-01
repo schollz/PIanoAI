@@ -129,9 +129,11 @@ func (m *AI) Learn(notes music.Notes) (err error) {
 	defer m.toggleLearning(false)
 
 	// Analyze the notes
+	logger.Info("Analyzing notes")
 	m.notes = Analyze(notes)
 
 	// Determine transition frequencies for the corresponding couplings, and then normalize
+	logger.Info("Determine transition frequencies")
 	for _, i := range m.stateOrdering { // i is the index of the property
 		prevValue := []int{-1, -1, -1, -1}
 		curValue := []int{-1, -1, -1, -1}
@@ -202,6 +204,7 @@ func (m *AI) Learn(notes music.Notes) (err error) {
 	}
 
 	// Normalize the transitions
+	logger.Debug("Normalize transitions")
 	for i := range m.matrices {
 		for a := range m.matrices[i] {
 			for b := range m.matrices[i][a] {
@@ -250,7 +253,7 @@ func (m *AI) Lick(startBeat int) (lick *music.Music, err error) {
 	note := []int{-1, -1, -1, -1}
 	for {
 		note = m.GenerateNote(note)
-		if note[0] == -404 {
+		if note[0] == -404 || len(notes) > 30 {
 			break
 		}
 		notes = append(notes, note)

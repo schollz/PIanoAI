@@ -201,6 +201,20 @@ func (p *Player) Listen() {
 				p.MusicFuture.AddNote(note)
 			}
 			p.Beat = 0
+		} else if note.Pitch == 108 {
+			if !note.On {
+				continue
+			}
+			logger.Info("Playing back lick")
+			p.AI.Learn(p.MusicHistory.GetAll())
+			notes, err := p.AI.Lick(p.Beat + 64)
+			if err != nil {
+				logger.Error(err.Error())
+			}
+			for _, note := range notes.GetAll() {
+				logger.Infof("Adding %+v to future", note)
+				p.MusicFuture.AddNote(note)
+			}
 		} else {
 			logger.Infof("Adding %+v", note)
 			go p.MusicHistory.AddNote(note)
