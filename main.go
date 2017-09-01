@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/schollz/rpiai-piano/player"
 	log "github.com/sirupsen/logrus"
 )
@@ -18,6 +20,18 @@ func init() {
 }
 
 func main() {
+	fmt.Println(`
+ _______________________________________  
+|  | | | |  |  | | | | | |  |  | | | |  | 
+|  | | | |  |  | | | | | |  |  | | | |  | 
+|  | | | |  |  | | | | | |  |  | | | |  | 
+|  |_| |_|  |  |_| |_| |_|  |  |_| |_|  | 
+|   |   |   |   |   |   |   |   |   |   | 
+|   |   |   |   |   |   |   |   |   |   | 
+|___|___|___|___|___|___|___|___|___|___| 
+
+Lets play some music!
+                   `)
 	var err error
 	p, err := player.New(120)
 	if err != nil {

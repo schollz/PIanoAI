@@ -22,6 +22,16 @@ type AI struct {
 	// BeatsBetweenLicks specifies the amount of space
 	// between each lick before adding an "end"
 	BeatsBetweenLicks int
+
+	// HighPassFilter only uses notes above a certain level
+	HighPassFilter int
+
+	// MinimumLickLength is the minimum number of notes for a lick
+	MinimumLickLength int
+
+	// MaximumLickLength is the maximum number of notes for a lick
+	MaximumLickLength int
+
 	// keep track of whether it is learning,
 	// so learning can be done asynchronously
 	IsLearning bool
@@ -68,6 +78,10 @@ func New() (m *AI) {
 	m.coupling = [][]int{{-1, 0, 0, 0}, {0, -1, 0, 0}, {0, 0, -1, 0}, {0, 0, 0, -1}}
 	m.notes = [][]int{}
 	m.stateOrdering = []int{0, 1, 2, 3}
+	m.BeatsBetweenLicks = 16 * 64
+	m.HighPassFilter = 60
+	m.MinimumLickLength = 2
+	m.MaximumLickLength = 30
 	return m
 }
 
@@ -78,14 +92,17 @@ func New() (m *AI) {
 // use Couple(1,[]int{-1,-1,0,0}),
 // where {0,1,2,3} -> {Pitch,Velocity,Duration,Lag}.
 func (m *AI) Couple(index int, coupling []int) {
+
 	m.coupling[index] = coupling
 }
 
 func (m *AI) toggleLearning(l bool) {
+
 	m.IsLearning = l
 }
 
-func Analyze(notes music.Notes) (analyzedNotes [][]int) {
+func (m *AI) Analyze(notes music.Notes) (analyzedNotes [][]int) {
+
 	analyzedNotes = [][]int{}
 	sort.Sort(notes)
 	// Find a note that turns on
@@ -110,7 +127,7 @@ func Analyze(notes music.Notes) (analyzedNotes [][]int) {
 				values[3] = note2.Beat - note1.Beat
 			}
 			// If the values are filled, then append and move on
-			if values[2] != 10000 && values[3] != 10000 {
+			if values[2] != 10000 && values[3] != 10000 && values[0] >= m.HighPassFilter {
 				analyzedNotes = append(analyzedNotes, values)
 				break
 			}
@@ -119,18 +136,38 @@ func Analyze(notes music.Notes) (analyzedNotes [][]int) {
 	return
 }
 
+func (m *AI) addToMatrices(i, a, b, c, d int) {
+
+	if _, ok := m.matrices[i][a]; !ok {
+		m.matrices[i][a] = make(map[int]map[int]int)
+	}
+	if _, ok := m.matrices[i][a][b]; !ok {
+		m.matrices[i][a][b] = make(map[int]int)
+	}
+	if _, ok := m.matrices[i][a][b][c]; !ok {
+		m.matrices[i][a][b][c] = 0
+	}
+	m.matrices[i][a][b][c] += d
+}
+
 // Learn is for calculating the matricies for the transition
 // probabilities
 func (m *AI) Learn(notes music.Notes) (err error) {
 	logger := log.WithFields(log.Fields{
-		"function": "Music.Learn",
+		"function": "AI.Learn",
 	})
+	if m.IsLearning {
+		return errors.New("Already learning")
+	}
 	m.toggleLearning(true)
 	defer m.toggleLearning(false)
 
 	// Analyze the notes
 	logger.Info("Analyzing notes")
-	m.notes = Analyze(notes)
+	m.notes = m.Analyze(notes)
+	if len(m.notes) < 10 {
+		return errors.New("Need more 30 notes")
+	}
 
 	// Determine transition frequencies for the corresponding couplings, and then normalize
 	logger.Info("Determine transition frequencies")
@@ -140,7 +177,7 @@ func (m *AI) Learn(notes music.Notes) (err error) {
 		a := -1
 		b := -1
 		for noteNum, note := range m.notes {
-			logger.Debugf("note: %+v", note)
+			// logger.Debugf("note: %+v", note)
 			curValue = note
 			a = -1
 			b = -1
@@ -176,28 +213,19 @@ func (m *AI) Learn(notes music.Notes) (err error) {
 			if insufficientInfo {
 				logger.Warnf("Insufficient info for a: %+v,b: %+v", a, b)
 			} else {
-				if _, ok := m.matrices[i][a]; !ok {
-					m.matrices[i][a] = make(map[int]map[int]int)
-				}
-				if _, ok := m.matrices[i][a][b]; !ok {
-					m.matrices[i][a][b] = make(map[int]int)
-				}
-				c := note[i]
-				if _, ok := m.matrices[i][a][b][c]; !ok {
-					m.matrices[i][a][b][c] = 0
-				}
-				m.matrices[i][a][b][c]++
+				m.addToMatrices(i, a, b, note[i], 1)
 			}
-			prevValue = curValue
-			if noteNum == 0 {
+			if noteNum == 0 || (noteNum > 0 && prevValue[3] > m.BeatsBetweenLicks) {
 				// this starts a lick
-				m.matrices[i][-200] = make(map[int]map[int]int)
-				m.matrices[i][-200][-200] = make(map[int]int)
-				m.matrices[i][-200][-200][prevValue[i]] = 1
+				m.addToMatrices(i, -200, -200, curValue[i], 1)
+				if noteNum > 0 && i == 0 {
+					m.addToMatrices(i, a, b, -404, 1)
+				}
 			} else if len(m.notes)-1 == noteNum && i == 0 {
 				// this ends a lick
-				m.matrices[i][a][b][-404] = 1
+				m.addToMatrices(i, a, b, -404, 1)
 			}
+			prevValue = curValue
 		}
 		// -404 signals end
 
@@ -205,6 +233,7 @@ func (m *AI) Learn(notes music.Notes) (err error) {
 
 	// Normalize the transitions
 	logger.Debug("Normalize transitions")
+
 	for i := range m.matrices {
 		for a := range m.matrices[i] {
 			for b := range m.matrices[i][a] {
@@ -234,14 +263,15 @@ func (m *AI) Learn(notes music.Notes) (err error) {
 			}
 		}
 	}
-
 	m.HasLearned = true
+
 	return
 }
 
 // Lick generates a sequence of chords using the Markov
 // probabilities. Must run Learn() beforehand.
 func (m *AI) Lick(startBeat int) (lick *music.Music, err error) {
+
 	if !m.HasLearned || m.IsLearning {
 		err = errors.New("Learning must be finished")
 		return
@@ -253,7 +283,10 @@ func (m *AI) Lick(startBeat int) (lick *music.Music, err error) {
 	note := []int{-1, -1, -1, -1}
 	for {
 		note = m.GenerateNote(note)
-		if note[0] == -404 || len(notes) > 30 {
+		if note[0] == -404 || len(notes) > m.MaximumLickLength {
+			if len(notes) < m.MinimumLickLength {
+				continue
+			}
 			break
 		}
 		notes = append(notes, note)
@@ -288,6 +321,7 @@ func ConvertNotes(notes [][]int, startBeat int) (song *music.Music) {
 }
 
 func (m *AI) GenerateNote(prevValue []int) (curValue []int) {
+
 	curValue = []int{-1, -1, -1, -1}
 	for _, i := range m.stateOrdering {
 		a := -1

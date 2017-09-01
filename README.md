@@ -37,13 +37,13 @@ rpiai-piano
 ## TODO
 
 - [ ] [External script that will start/stop piano based on plugging in Midi](https://raspberrypi.stackexchange.com/questions/19600/is-there-a-way-to-automatically-activate-a-script-when-a-usb-device-connects?newreg=270fe49c413340daa171e1dfdbf96de9)
-- [ ] Allow threshold for using notes for AI. (i.e. AI only generates licks on above middle C, or similar)
-- [ ] Implement minimum distance between notes in AI so that more starts/stops are available.
+- [x] Allow threshold for using notes for AI. (i.e. AI only generates licks on above middle C, or similar)
+- [x] Implement minimum distance between notes in AI so that more starts/stops are available.
 - [ ] Put links to code on Youtube videos (link to tree)
 - [ ] If a config file is not present, use default values and create one for next time (and send a message to the user)
 - [ ] Add a new button for reseting the system
 - [ ] Add a function for shutting down
-- [ ] Add cool terminal text header
+- [x] Add cool terminal text header
 - [ ] Add command line functions
 
 # Acknowledgements
