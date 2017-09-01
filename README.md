@@ -8,7 +8,7 @@ This is code for providing an augmented piano playing experience. When run, this
 # Try it
 
 1. Get a MIDI-enabled keyboard and two-way MIDI adapter
-2. Get a Raspberry Pi (however, Windows / Linux / OS X should also work).
+2. Get a Raspberry Pi (however, a Windows / Linux / OS X computer should also work).
 3. [Install Go](https://golang.org/dl/) on the computer you will use
 4. Install the `libportmidi` (v. 217) library: 
 
@@ -34,6 +34,17 @@ go get github.com/schollz/rpiai-piano
 
 ```
 ./rpiai-piano
+```
+
+## Buliding portmidi
+
+```
+sudo apt-get install cmake-curses-gui libasound2-dev
+git clone https://github.com/aoeu/portmidi-1.git
+cd portmidi-1
+ccmake .
+make
+sudo make install
 ```
 
 ## TODO
