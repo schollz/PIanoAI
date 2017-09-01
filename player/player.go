@@ -60,15 +60,16 @@ func New(bpm int, beats ...int) (p *Player, err error) {
 		"function": "Player.Init",
 	})
 	p.BPM = bpm
-	logger.Infof("Initiating player at %2.0f BPM", p.BPM)
 	p.Beat = 0
 	p.Key = "C"
 
+	logger.Debug("Loading piano")
 	p.Piano, err = piano.New()
 	if err != nil {
 		return
 	}
 
+	logger.Debug("Loading music")
 	p.MusicFuture = music.New()
 	var errOpening error
 	p.MusicHistoryFile = "music_history.json"
@@ -80,6 +81,7 @@ func New(bpm int, beats ...int) (p *Player, err error) {
 		logger.Info("Loaded previous music history")
 	}
 
+	logger.Debug("Loading AI")
 	p.AI = ai.New()
 
 	if len(beats) == 1 {

@@ -8,43 +8,30 @@ This is code for providing an augmented piano playing experience. When run, this
 # Try it
 
 1. Get a MIDI-enabled keyboard and two-way MIDI adapter
-2. Get a Raspberry Pi (however, a Windows / Linux / OS X computer should also work).
-3. [Install Go](https://golang.org/dl/) on the computer you will use
-4. Install the `libportmidi` (v. 217) library: 
-
-### Linux
-
-`apt-get install libportmidi-dev`
-
-### OS X
-
-`brew install portmidi`
-
-### Windows
-
-[Download ](https://sourceforge.net/projects/portmedia/files/portmidi/217/pmdefaults-setup-w32-217.zip/download) from [Sourceforge](https://sourceforge.net/projects/portmedia/files/portmidi/217/).
-
-5. Install `rpiai-piano`:
-
-```
-go get github.com/schollz/rpiai-piano
-```
-
-6. Play!
-
-```
-./rpiai-piano
-```
-
-## Buliding portmidi
+2. Get a Raspberry Pi (however, a Windows / Linux / OS X computer should also work) and connect it to the MIDI keyboard.
+3. Build latest version of `libportmidi` (if your using Mac just do `brew install portmidi`, if Windows just [Download it](https://sourceforge.net/projects/portmedia/files/portmidi/217/pmdefaults-setup-w32-217.zip/download)))
 
 ```
 sudo apt-get install cmake-curses-gui libasound2-dev
-git clone https://github.com/aoeu/portmidi-1.git
-cd portmidi-1
-ccmake .
+git clone https://github.com/aoeu/portmidi.git
+cd portmidi
+ccmake .  # press in sequence: c, e, c, e, g
 make
 sudo make install
+```
+
+4. [Install Go](https://golang.org/dl/).
+5. Install `rpiai-piano`:
+
+```
+go get -v github.com/schollz/rpiai-piano
+```
+
+6. Add `export LD_LIBRARY_PATH=/usr/local/lib` to your `.bashrc`. (Unnessecary if you did not build `portmidi`). Reload bash `source ~/.bashrc` if this is the first time.
+7. Play!
+
+```
+rpiai-piano
 ```
 
 ## TODO
@@ -56,6 +43,8 @@ sudo make install
 - [ ] If a config file is not present, use default values and create one for next time (and send a message to the user)
 - [ ] Add a new button for reseting the system
 - [ ] Add a function for shutting down
+- [ ] Add cool terminal text header
+- [ ] Add command line functions
 
 # Acknowledgements
 
