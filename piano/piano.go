@@ -4,7 +4,7 @@ import (
 	"sync"
 
 	"github.com/schollz/rpiai-piano/music"
-	"github.com/schollz/portmidi"
+	"github.com/rakyll/portmidi"
 	log "github.com/sirupsen/logrus"
 )
 
