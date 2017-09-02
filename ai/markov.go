@@ -79,7 +79,7 @@ func New() (m *AI) {
 		m.matrices[i] = make(map[int]map[int]map[int]int)
 	}
 
-	m.coupling = [][]int{{-1, 0, 0, 0}, {0, -1, 0, 0}, {0, 0, -1, 0}, {0, 0, 0, -1}}
+	m.coupling = [][]int{{-1, 0, 0, 0}, {1, -1, 0, 0}, {-1, 0, -1, 0}, {-1, 0, 0, -1}}
 	m.notes = [][]int{}
 	m.stateOrdering = []int{0, 1, 2, 3}
 	m.BeatsBetweenLicks = 16 * 64
@@ -180,7 +180,7 @@ func (m *AI) Learn(notes music.Notes) (err error) {
 		curValue := []int{-1, -1, -1, -1}
 		a := -1
 		b := -1
-		for noteNum, note := range m.notes {
+		for _, note := range m.notes {
 			// logger.Debugf("note: %+v", note)
 			curValue = note
 			a = -1
@@ -217,22 +217,16 @@ func (m *AI) Learn(notes music.Notes) (err error) {
 			if insufficientInfo {
 				logger.Warnf("Insufficient info for a: %+v,b: %+v", a, b)
 			} else {
-				m.addToMatrices(i, a, b, note[i], 1)
-			}
-			if noteNum == 0 || (noteNum > 0 && prevValue[3] > m.BeatsBetweenLicks) {
-				// this starts a lick
-				m.addToMatrices(i, -200, -200, curValue[i], 1)
-				if noteNum > 0 && i == 0 {
-					m.addToMatrices(i, a, b, -404, 1)
+				if i == 3 {
+					if note[i] > m.BeatsBetweenLicks {
+						note[i] = m.BeatsBetweenLicks
+					}
 				}
-			} else if len(m.notes)-1 == noteNum && i == 0 {
-				// this ends a lick
-				m.addToMatrices(i, a, b, -404, 1)
+				m.addToMatrices(i, a, b, note[i], 1)
+				m.addToMatrices(i, -1, -1, note[i], 1)
 			}
 			prevValue = curValue
 		}
-		// -404 signals end
-
 	}
 
 	// Normalize the transitions
@@ -284,16 +278,15 @@ func (m *AI) Lick(startBeat int) (lick *music.Music, err error) {
 	// // Generate lick from the transition probabilities
 	// // by looping through properties in the order specified.
 	notes := [][]int{}
-	note := []int{-1, -1, -1, -1}
+	note := m.notes[rand.Intn(len(m.notes))]
+	lickLength := 0
 	for {
 		note = m.GenerateNote(note)
-		if note[0] == -404 || len(notes) > m.MaximumLickLength {
-			if len(notes) < m.MinimumLickLength {
-				continue
-			}
+		notes = append(notes, note)
+		lickLength += note[3]
+		if lickLength > 16*64 {
 			break
 		}
-		notes = append(notes, note)
 	}
 	fmt.Println(notes)
 
@@ -350,13 +343,10 @@ func (m *AI) GenerateNote(prevValue []int) (curValue []int) {
 					}
 				}
 			}
-		} else {
-			a = -200
-			b = -200
 		}
 		if len(m.matrices[i][a][b]) == 0 {
-			a = -200
-			b = -200
+			a = -1
+			b = -1
 		}
 		curValue[i] = pickRandom(m.matrices[i][a][b])
 	}

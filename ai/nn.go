@@ -33,6 +33,9 @@ func (ai *AI) Learn2(notes music.Notes) (err error) {
 
 	patterns := [][][]float64{}
 	for i, note := range ai.notes {
+		ai.notes[i] = append(note, int(rand.Int31()))
+	}
+	for i, note := range ai.notes {
 		if i == 0 {
 			continue
 		}
@@ -50,7 +53,7 @@ func (ai *AI) Learn2(notes music.Notes) (err error) {
 	// the networks structure will contain:
 	// 2 inputs, 2 hidden nodes and 1 output.
 	logger.Debug("Initializing neural net...")
-	ai.ff.Init(4*32, 10, 4*32)
+	ai.ff.Init(5*32, 10, 5*32)
 
 	// train the network using the XOR patterns
 	// the training will run for 1000 epochs

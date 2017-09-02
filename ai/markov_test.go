@@ -2,6 +2,7 @@ package ai
 
 import (
 	"fmt"
+	"math/rand"
 	"testing"
 
 	"github.com/schollz/rpiai-piano/music"
@@ -23,21 +24,21 @@ func TestAI1(t *testing.T) {
 
 	fmt.Println(pickRandom(ai.matrices[0][65][-1]))
 
-	note := []int{-1, -1, -1, -1}
+	note := ai.notes[rand.Intn(len(ai.notes))]
 	for j := 0; j < 10; j++ {
 		note = ai.GenerateNote(note)
 		fmt.Println(note)
 	}
-	fmt.Println(ai.matrices[1][59][-1])
+	fmt.Println(ai.matrices[1])
 
 	fmt.Println("---LICK---")
 	fmt.Println(ai.Lick(0))
 
-	fmt.Println(ai.matrices[0])
-	fmt.Println(ai.matrices[0][-200][-200])
+	// fmt.Println(ai.matrices[0])
+	// fmt.Println(ai.matrices[0][-200][-200])
 
-	ai.Learn2(m.GetAll())
-	fmt.Println("---LICK---")
-	fmt.Println(ai.Lick2(0))
+	// ai.Learn2(m.GetAll())
+	// fmt.Println("---LICK---")
+	// fmt.Println(ai.Lick2(0))
 
 }
