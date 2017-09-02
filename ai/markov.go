@@ -69,6 +69,8 @@ type AI struct {
 
 	// neural network
 	ff *gobrain.FeedForward
+
+	ff2 [4]*gobrain.FeedForward
 }
 
 func New() (m *AI) {
@@ -86,6 +88,7 @@ func New() (m *AI) {
 	m.HighPassFilter = 60
 	m.MinimumLickLength = 2
 	m.MaximumLickLength = 30
+	m.ff2 = [4]*gobrain.FeedForward{}
 	return m
 }
 

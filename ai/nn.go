@@ -33,7 +33,7 @@ func (ai *AI) Learn2(notes music.Notes) (err error) {
 
 	patterns := [][][]float64{}
 	for i, note := range ai.notes {
-		ai.notes[i] = append(note, int(rand.Int31()))
+		ai.notes[i] = append(note, 0)
 	}
 	for i, note := range ai.notes {
 		if i == 0 {
@@ -53,14 +53,14 @@ func (ai *AI) Learn2(notes music.Notes) (err error) {
 	// the networks structure will contain:
 	// 2 inputs, 2 hidden nodes and 1 output.
 	logger.Debug("Initializing neural net...")
-	ai.ff.Init(5*32, 10, 5*32)
+	ai.ff.Init(5*32, 30, 5*32)
 
 	// train the network using the XOR patterns
 	// the training will run for 1000 epochs
 	// the learning rate is set to 0.6 and the momentum factor to 0.4
 	// use true in the last parameter to receive reports about the learning error
 	logger.Debug("Training neural net...")
-	ai.ff.Train(patterns, 1000, 0.6, 0.4, true)
+	ai.ff.Train(patterns, 10000, 0.1, 0.3, true)
 	logger.Debug("Finished training.")
 	ai.HasLearned = true
 	return
