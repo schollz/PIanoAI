@@ -7,7 +7,7 @@ import (
 	"math/rand"
 	"strconv"
 
-	"github.com/goml/gobrain"
+	"github.com/schollz/gobrain"
 	"github.com/schollz/rpiai-piano/music"
 	log "github.com/sirupsen/logrus"
 )
@@ -49,26 +49,33 @@ func (ai *AI) Learn2(notes music.Notes) (err error) {
 	// initialize the Neural Network;
 	// the networks structure will contain:
 	// 2 inputs, 2 hidden nodes and 1 output.
+	logger.Debug("Initializing neural net...")
 	ai.ff.Init(4*32, 10, 4*32)
 
 	// train the network using the XOR patterns
 	// the training will run for 1000 epochs
 	// the learning rate is set to 0.6 and the momentum factor to 0.4
 	// use true in the last parameter to receive reports about the learning error
-	ai.ff.Train(patterns, 1000, 0.01, 0.4, true)
+	logger.Debug("Training neural net...")
+	ai.ff.Train(patterns, 1000, 0.6, 0.4, true)
+	logger.Debug("Finished training.")
+	ai.HasLearned = true
 	return
 }
 
 // Lick2 generates a sequence of chords using the Markov
 // probabilities. Must run Learn2() beforehand.
 func (ai *AI) Lick2(startBeat int) (lick *music.Music, err error) {
-
+	logger := log.WithFields(log.Fields{
+		"function": "AI.Lick2",
+	})
 	if !ai.HasLearned || ai.IsLearning {
 		err = errors.New("Learning must be finished")
 		return
 	}
 
 	// // Generate lick from the neural network
+	logger.Debug("Generating lick from neural net")
 	notes := [][]int{}
 	note := ai.notes[rand.Intn(len(ai.notes))] // Pick a random note
 	for {

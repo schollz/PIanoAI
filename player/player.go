@@ -2,7 +2,6 @@ package player
 
 import (
 	"fmt"
-	"math"
 	"os"
 	"os/signal"
 	"time"
@@ -155,13 +154,13 @@ func (p *Player) Start() {
 			// 	go p.Improvisation()
 			// }
 
-			if math.Mod(float64(p.Beat), 64) == 0 {
-				logger.WithFields(log.Fields{
-					"Beat":     p.Beat,
-					"LastNote": p.LastNote,
-					"KeysDown": p.KeysCurrentlyPressed,
-				}).Debug("metronome")
-			}
+			// if math.Mod(float64(p.Beat), 64) == 0 {
+			// 	logger.WithFields(log.Fields{
+			// 		"Beat":     p.Beat,
+			// 		"LastNote": p.LastNote,
+			// 		"KeysDown": p.KeysCurrentlyPressed,
+			// 	}).Debug("metronome")
+			// }
 
 		case <-doneChan:
 			fmt.Println("Done")
