@@ -81,7 +81,7 @@ func New() (m *AI) {
 		m.matrices[i] = make(map[int]map[int]map[int]int)
 	}
 
-	m.coupling = [][]int{{-1, 0, 0, 0}, {1, -1, 0, 0}, {-1, 0, -1, 0}, {-1, 0, 0, -1}}
+	m.coupling = [][]int{{-2, 0, 0, 0}, {0, -2, 0, 0}, {-2, 0, 0, 0}, {0, 0, 0, -2}}
 	m.notes = [][]int{}
 	m.stateOrdering = []int{0, 1, 2, 3}
 	m.BeatsBetweenLicks = 16 * 64
@@ -183,7 +183,7 @@ func (m *AI) Learn(notes music.Notes) (err error) {
 		curValue := []int{-1, -1, -1, -1}
 		a := -1
 		b := -1
-		for _, note := range m.notes {
+		for noteNum, note := range m.notes {
 			// logger.Debugf("note: %+v", note)
 			curValue = note
 			a = -1
@@ -213,6 +213,13 @@ func (m *AI) Learn(notes music.Notes) (err error) {
 					if a == -1 {
 						a = curValue[index]
 					} else if b == -1 {
+						b = curValue[index]
+					}
+				} else if place == -2 {
+					if noteNum == 0 {
+						insufficientInfo = true
+					} else {
+						a = prevValue[index]
 						b = curValue[index]
 					}
 				}
