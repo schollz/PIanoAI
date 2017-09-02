@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"sort"
 
+	"github.com/goml/gobrain"
 	"github.com/schollz/rpiai-piano/music"
 	log "github.com/sirupsen/logrus"
 )
@@ -65,6 +66,9 @@ type AI struct {
 
 	// Order to process notes in
 	stateOrdering []int
+
+	// neural network
+	ff *gobrain.FeedForward
 }
 
 func New() (m *AI) {

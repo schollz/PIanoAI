@@ -36,4 +36,8 @@ func TestAI1(t *testing.T) {
 	fmt.Println(ai.matrices[0])
 	fmt.Println(ai.matrices[0][-200][-200])
 
+	ai.Learn2(m.GetAll())
+	fmt.Println("---LICK---")
+	fmt.Println(ai.Lick2(0))
+
 }
