@@ -188,10 +188,12 @@ func (m *AI) Learn(notes music.Notes) (err error) {
 			curValue = note
 			a = -1
 			b = -1
+			couplingType := 0
 			insufficientInfo := false // coupling must be done in the correct order (left to user)
 			for index, place := range m.coupling[i] {
 				logger.Debugf("curValue: %+v, prevValue: %+v", curValue, prevValue)
 				logger.Debugf("index: %+v, place: %+v", index, place)
+				couplingType = place
 				if place == 0 {
 					// ignore this coupling
 					continue
@@ -233,6 +235,9 @@ func (m *AI) Learn(notes music.Notes) (err error) {
 					}
 				}
 				m.addToMatrices(i, a, b, note[i], 1)
+				if couplingType == -2 {
+					m.addToMatrices(i, b, a, note[i], 1)
+				}
 				m.addToMatrices(i, -1, -1, note[i], 1)
 			}
 			prevValue = curValue
@@ -288,11 +293,15 @@ func (m *AI) Lick(startBeat int) (lick *music.Music, err error) {
 	// // Generate lick from the transition probabilities
 	// // by looping through properties in the order specified.
 	notes := [][]int{}
-	note := m.notes[rand.Intn(len(m.notes))]
+	noteIndex := rand.Intn(len(m.notes)-1) + 1
+	note1 := m.notes[noteIndex]
+	note2 := m.notes[noteIndex-1]
 	lickLength := 0
 	for {
-		note = m.GenerateNote(note)
+		note := m.GenerateNote(note1, note2)
 		notes = append(notes, note)
+		note2 = note1
+		note1 = note
 		lickLength += note[3]
 		if lickLength > 16*64 {
 			break
@@ -327,7 +336,7 @@ func ConvertNotes(notes [][]int, startBeat int) (song *music.Music) {
 	return song
 }
 
-func (m *AI) GenerateNote(prevValue []int) (curValue []int) {
+func (m *AI) GenerateNote(prevValue []int, prevPrevValue []int) (curValue []int) {
 
 	curValue = []int{-1, -1, -1, -1}
 	for _, i := range m.stateOrdering {
@@ -351,6 +360,9 @@ func (m *AI) GenerateNote(prevValue []int) (curValue []int) {
 					} else if b == -1 {
 						b = curValue[index]
 					}
+				} else if place == -2 {
+					a = prevPrevValue[index]
+					b = prevValue[index]
 				}
 			}
 		}
@@ -359,6 +371,19 @@ func (m *AI) GenerateNote(prevValue []int) (curValue []int) {
 			b = -1
 		}
 		curValue[i] = pickRandom(m.matrices[i][a][b])
+		if a == b {
+			if rand.Intn(10) < 9 {
+				n := rand.Intn(len(m.matrices[i][a]))
+				num := 0
+				for c := range m.matrices[i][a] {
+					if num == n {
+						b = c
+					}
+					num++
+				}
+				curValue[i] = pickRandom(m.matrices[i][a][b])
+			}
+		}
 	}
 	return
 }

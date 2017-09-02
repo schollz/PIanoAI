@@ -24,10 +24,14 @@ func TestAI1(t *testing.T) {
 
 	fmt.Println(pickRandom(ai.matrices[0][65][-1]))
 
-	note := ai.notes[rand.Intn(len(ai.notes))]
+	noteIndex := rand.Intn(len(ai.notes)-1) + 1
+	note1 := ai.notes[noteIndex]
+	note2 := ai.notes[noteIndex-1]
 	for j := 0; j < 10; j++ {
-		note = ai.GenerateNote(note)
+		note := ai.GenerateNote(note1, note2)
 		fmt.Println(note)
+		note2 = note1
+		note1 = note
 	}
 	fmt.Println(ai.matrices[1])
 
@@ -37,8 +41,34 @@ func TestAI1(t *testing.T) {
 	// fmt.Println(ai.matrices[0])
 	// fmt.Println(ai.matrices[0][-200][-200])
 
-	ai.Learn3(m.GetAll())
-	fmt.Println("---LICK---")
-	fmt.Println(ai.Lick3(0))
+	// ai.Learn3(m.GetAll())
+	// fmt.Println("---LICK---")
+	// fmt.Println(ai.Lick3(0))
 
+}
+
+func TestAI2(t *testing.T) {
+	ai := New()
+	m, err := music.Open("../testing/em_jam.json")
+	if err != nil {
+		t.Error(err)
+	}
+	ai.Learn(m.GetAll())
+	fmt.Println(ai.matrices[0])
+
+	noteIndex := rand.Intn(len(ai.notes)-1) + 1
+	note1 := ai.notes[noteIndex]
+	note2 := ai.notes[noteIndex-1]
+	for j := 0; j < 10; j++ {
+		note := ai.GenerateNote(note1, note2)
+		fmt.Println(note)
+		note2 = note1
+		note1 = note
+	}
+	fmt.Println(ai.matrices[0])
+	fmt.Println(ai.matrices[0][88])
+
+	fmt.Println("---LICK---")
+	fmt.Println(ai.Lick(0))
+	fmt.Println(ai.notes)
 }
