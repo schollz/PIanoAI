@@ -82,7 +82,7 @@ func New() (m *AI) {
 		m.matrices[i] = make(map[int]map[int]map[int]int)
 	}
 
-	m.coupling = [][]int{{-1, 0, 0, 0}, {1, -1, 0, 0}, {1, 0, -1, 0}, {1, 0, 0, -1}}
+	m.coupling = [][]int{{-1, 0, 0, 0}, {1, -1, 0, 0}, {0, 0, -1, 0}, {0, 0, 0, -1}}
 	m.notes = [][]int{}
 	m.stateOrdering = []int{0, 1, 2, 3}
 	m.BeatsBetweenLicks = 16 * 64
@@ -136,6 +136,9 @@ func (m *AI) Analyze(notes music.Notes) (analyzedNotes [][]int) {
 			}
 			// If the values are filled, then append and move on
 			if values[2] != 10000 && values[3] != 10000 && values[0] >= m.HighPassFilter {
+				if values[3] <= 6 {
+					values[3] = 0
+				}
 				analyzedNotes = append(analyzedNotes, values)
 				break
 			}
@@ -169,6 +172,11 @@ func (m *AI) Learn(notes music.Notes) (err error) {
 	}
 	m.toggleLearning(true)
 	defer m.toggleLearning(false)
+
+	m.matrices = make(map[int]map[int]map[int]map[int]int)
+	for i := 0; i <= 3; i++ {
+		m.matrices[i] = make(map[int]map[int]map[int]int)
+	}
 
 	// Analyze the notes
 	logger.Info("Analyzing notes")
@@ -250,11 +258,15 @@ func (m *AI) Learn(notes music.Notes) (err error) {
 						note[i] += 16
 					}
 				}
-				m.addToMatrices(i, a, b, note[i], 1)
-				if couplingType == -2 {
-					m.addToMatrices(i, b, a, note[i], 1)
+				weight := 1
+				if note[2] > 0 {
+					weight = weight * int(math.Log(float64(note[2])))
 				}
-				m.addToMatrices(i, -1, -1, note[i], 1)
+				m.addToMatrices(i, a, b, note[i], weight)
+				if couplingType == -2 {
+					m.addToMatrices(i, b, a, note[i], weight)
+				}
+				m.addToMatrices(i, -1, -1, note[i], weight)
 			}
 			prevValue = curValue
 		}
@@ -316,8 +328,10 @@ func (m *AI) Lick(startBeat int) (lick *music.Music, err error) {
 	for {
 		note := m.GenerateNote(note1, note2)
 		for try := 0; try < 3; try++ {
-			if math.Abs(float64(note[0]-note1[0])) > 8 {
+			if math.Abs(float64(note[0]-note1[0])) > 6 && note[3] > 0 {
 				note = m.GenerateNote(note1, note2)
+			} else {
+				break
 			}
 		}
 		notes = append(notes, note)
@@ -392,9 +406,6 @@ func (m *AI) GenerateNote(prevValue []int, prevPrevValue []int) (curValue []int)
 			b = -1
 		}
 		curValue[i] = pickRandom(m.matrices[i][a][b])
-		if i == 3 && curValue[i] == 0 {
-			curValue[i] = pickRandom(m.matrices[i][-1][-1])
-		}
 		if a == b {
 			if rand.Intn(10) < 9 {
 				n := rand.Intn(len(m.matrices[i][a]))
