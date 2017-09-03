@@ -3,6 +3,7 @@ package ai
 import (
 	"errors"
 	"fmt"
+	"math"
 	"math/rand"
 	"sort"
 
@@ -81,7 +82,7 @@ func New() (m *AI) {
 		m.matrices[i] = make(map[int]map[int]map[int]int)
 	}
 
-	m.coupling = [][]int{{-2, 0, 0, 0}, {0, -2, 0, 0}, {-2, 0, 0, 0}, {0, 0, 0, -2}}
+	m.coupling = [][]int{{-1, 0, 0, 0}, {1, -1, 0, 0}, {1, 0, -1, 0}, {1, 0, 0, -1}}
 	m.notes = [][]int{}
 	m.stateOrdering = []int{0, 1, 2, 3}
 	m.BeatsBetweenLicks = 16 * 64
@@ -234,6 +235,21 @@ func (m *AI) Learn(notes music.Notes) (err error) {
 						note[i] = m.BeatsBetweenLicks
 					}
 				}
+				if i > 1 && note[i] != 0 {
+					note[i] = (note[i] / 32) * 32
+					if note[i] == 0 {
+						note[i] = 16
+					}
+					if i == 2 {
+						note[i] += rand.Intn(8)
+					}
+					if rand.Intn(10) < 5 {
+						note[i] += 8
+					}
+					if rand.Intn(10) < 2 {
+						note[i] += 16
+					}
+				}
 				m.addToMatrices(i, a, b, note[i], 1)
 				if couplingType == -2 {
 					m.addToMatrices(i, b, a, note[i], 1)
@@ -299,6 +315,11 @@ func (m *AI) Lick(startBeat int) (lick *music.Music, err error) {
 	lickLength := 0
 	for {
 		note := m.GenerateNote(note1, note2)
+		for try := 0; try < 3; try++ {
+			if math.Abs(float64(note[0]-note1[0])) > 8 {
+				note = m.GenerateNote(note1, note2)
+			}
+		}
 		notes = append(notes, note)
 		note2 = note1
 		note1 = note
@@ -371,6 +392,9 @@ func (m *AI) GenerateNote(prevValue []int, prevPrevValue []int) (curValue []int)
 			b = -1
 		}
 		curValue[i] = pickRandom(m.matrices[i][a][b])
+		if i == 3 && curValue[i] == 0 {
+			curValue[i] = pickRandom(m.matrices[i][-1][-1])
+		}
 		if a == b {
 			if rand.Intn(10) < 9 {
 				n := rand.Intn(len(m.matrices[i][a]))

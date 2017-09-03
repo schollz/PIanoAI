@@ -176,7 +176,7 @@ func (p *Player) Teach() (err error) {
 	knownNotes := p.MusicHistory.GetAll()
 	p.LastNote = p.Beat + 64*4 // give some time to start
 	logger.Info("Sending history to AI")
-	err = p.AI.Learn4(knownNotes)
+	err = p.AI.Learn(knownNotes)
 	if err != nil {
 		logger.Warn(err.Error())
 		return
@@ -196,7 +196,7 @@ func (p *Player) Improvisation() {
 			return
 		}
 	}
-	notes, err := p.AI.Lick4(p.Beat)
+	notes, err := p.AI.Lick(p.Beat)
 	if err != nil {
 		logger.Error(err.Error())
 	}
