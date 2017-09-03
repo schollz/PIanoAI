@@ -41,9 +41,9 @@ func TestAI1(t *testing.T) {
 	// fmt.Println(ai.matrices[0])
 	// fmt.Println(ai.matrices[0][-200][-200])
 
-	// ai.Learn3(m.GetAll())
-	// fmt.Println("---LICK---")
-	// fmt.Println(ai.Lick3(0))
+	ai.Learn4(m.GetAll())
+	fmt.Println("---LICK---")
+	fmt.Println(ai.Lick4(0))
 
 }
 
