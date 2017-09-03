@@ -249,14 +249,14 @@ func (m *AI) Learn(notes music.Notes) (err error) {
 						note[i] = 16
 					}
 					if i == 2 {
-						note[i] += rand.Intn(8)
+						note[i] += rand.Intn(16)
 					}
-					if rand.Intn(10) < 5 {
-						note[i] += 8
-					}
-					if rand.Intn(10) < 2 {
-						note[i] += 16
-					}
+					// if rand.Intn(10) < 5 {
+					// 	note[i] += 8
+					// }
+					// if rand.Intn(10) < 2 {
+					// 	note[i] += 16
+					// }
 				}
 				weight := 1
 				if note[2] > 0 {
