@@ -48,6 +48,7 @@ type AI struct {
 	DisallowChords bool
 
 	MaxChordDistance int
+	TicksBerBeat     int
 }
 
 type Chord struct {
@@ -57,7 +58,7 @@ type Chord struct {
 	Lag      int
 }
 
-func New() (ai *AI) {
+func New(ticksPerBeat int) (ai *AI) {
 	ai = new(AI)
 	ai.HighPassFilter = 65
 	ai.MinimumLickLength = 2
@@ -70,8 +71,9 @@ func New() (ai *AI) {
 	ai.WindowSizeMax = 50
 	ai.Jazzy = true
 	ai.DisallowChords = true
-	ai.MaxChordDistance = 6 // TODO: THIS SHOULD DEPEND ON BPM
+	ai.MaxChordDistance = 6 // DEPRECATED?
 	ai.Stacatto = true
+	ai.TicksBerBeat = ticksPerBeat
 	return ai
 }
 
@@ -94,6 +96,9 @@ func (ai *AI) Learn(mus *music.Music) (err error) {
 	logger := log.WithFields(log.Fields{
 		"function": "AI.Analyze",
 	})
+	if len(mus.Notes) < 30 {
+		return errors.New("Too few notes")
+	}
 	logger.Debug("Analyzing...")
 	// initialize the links and the chords
 	ai.links = make(map[string]string)
@@ -103,9 +108,9 @@ func (ai *AI) Learn(mus *music.Music) (err error) {
 	skipBeats := make(map[int]bool)
 	for beat1 := range mus.Notes {
 		for beat2 := range mus.Notes {
-			if beat2 < beat1 || beat2-beat1 > ai.MaxChordDistance {
-				continue
-			}
+			// if beat2 < beat1 || beat2-beat1 > ai.MaxChordDistance {
+			// 	continue
+			// }
 			for note := range mus.Notes[beat2] {
 				if _, ok := mus.Notes[beat1][note]; !ok {
 					mus.Notes[beat1][note] = music.Note{
@@ -174,8 +179,8 @@ func (ai *AI) Learn(mus *music.Music) (err error) {
 		}
 		chord.Velocity = velocity
 		chord.Duration = duration
-		if lag > 64*4 {
-			lag = 64 * 4
+		if lag > ai.TicksBerBeat*4 {
+			lag = ai.TicksBerBeat * 4
 		}
 		fmt.Println(duration, lag)
 		chord.Lag = lag
@@ -232,7 +237,7 @@ func (ai *AI) Lick(startBeat int) (lick *music.Music, err error) {
 		for _, index := range song {
 			lickLength += ai.chordArray[index].Lag
 		}
-		if lickLength > 64*16 {
+		if lickLength > ai.TicksBerBeat*16 {
 			break
 		}
 
@@ -284,7 +289,7 @@ func (ai *AI) Lick(startBeat int) (lick *music.Music, err error) {
 		}
 		if ai.Jazzy {
 			if rand.Intn(20) == 1 {
-				extraDuration += 64 * (1 + rand.Intn(4))
+				extraDuration += ai.TicksBerBeat * (1 + rand.Intn(4))
 			}
 		}
 
@@ -315,7 +320,7 @@ func (ai *AI) Lick(startBeat int) (lick *music.Music, err error) {
 		firstBeat += (ai.chordArray[index].Lag)/quantizer*quantizer + extraDuration + stacatto
 		if ai.Jazzy {
 			if rand.Intn(10) == 1 {
-				firstBeat += 64
+				firstBeat += ai.TicksBerBeat
 			}
 		}
 	}

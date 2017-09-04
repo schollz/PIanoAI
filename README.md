@@ -1,6 +1,6 @@
 <img align="right" src="https://rpiai.com/content/images/2017/09/gopher-1.svg" width="180" />
 
-# Raspberry Pi Piano Player AI
+# PIanoAI (Piano AI on a Raspberry Pi)
 
 This is code for providing an augmented piano playing experience. When run, this code will provide computer accompaniment that learns in real-time from the human host pianist. Then the host pianist stops playing for a given amount of time, the computer AI will then improvise in the space using the style learned from the host.
 
@@ -34,15 +34,11 @@ go get -v github.com/schollz/rpiai-piano
 rpiai-piano
 ```
 
-## TODO
+## Roadmap
 
 - [ ] [External script that will start/stop piano based on plugging in Midi](https://raspberrypi.stackexchange.com/questions/19600/is-there-a-way-to-automatically-activate-a-script-when-a-usb-device-connects?newreg=270fe49c413340daa171e1dfdbf96de9)
-- [ ] Put links to code on Youtube videos (link to tree)
-- [ ] If a config file is not present, use default values and create one for next time (and send a message to the user)
-- [ ] Add a new button for reseting the system
-- [ ] Add a function for shutting down
-- [ ] Add command line functions
 - [ ] Save sessions as MIDI
+- [ ] Integrating more AI routines
 
 # Acknowledgements
 

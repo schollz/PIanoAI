@@ -57,17 +57,24 @@ type Player struct {
 	// KeysCurrentlyPressed keeps track of whether a key is down (should be 0 if no keys are down)
 	KeysCurrentlyPressed int
 
+	// Listening frequency (to determine tick size)
 	ListeningRateHertz int
-	ticksPerBeat       int
+	// Number of ticks per beat
+	TicksPerBeat int
+	// 1/Quantize = shortest possible note
+	Quantize int
 }
 
-// Init initializes the parameters and connects up the piano
-func New() (p *Player, err error) {
+// New initializes the parameters and connects up the piano
+func New(bpm, listenHertz int, debug bool) (p *Player, err error) {
 	p = new(Player)
 	logger := log.WithFields(log.Fields{
 		"function": "Player.Init",
 	})
-	p.BPM = 120
+	if !debug {
+		log.SetLevel(log.InfoLevel)
+	}
+	p.BPM = bpm
 	p.Tick = 0
 	p.Key = "C"
 
@@ -90,12 +97,16 @@ func New() (p *Player, err error) {
 	}
 
 	logger.Debug("Loading AI")
-	p.AI = ai2.New()
-	p.AI.HighPassFilter = p.HighPassFilter
-	p.ListeningRateHertz = 250
+	p.ListeningRateHertz = listenHertz
 	p.BeatsOfSilence = 2
 	p.HighPassFilter = 65
 	p.lastNote = 0
+
+	p.TicksPerBeat = int(float64(p.ListeningRateHertz) / (float64(p.BPM) / 60))
+
+	p.AI = ai2.New(p.TicksPerBeat)
+	p.AI.HighPassFilter = p.HighPassFilter
+
 	return
 }
 
@@ -120,8 +131,6 @@ func (p *Player) Start() {
 		"function": "Player.Start",
 	})
 
-	p.ticksPerBeat = int(float64(p.ListeningRateHertz) / (float64(p.BPM) / 60))
-
 	// Exit on Ctl+C
 	doneChan := make(chan bool)
 	c := make(chan os.Signal, 1)
@@ -139,8 +148,9 @@ func (p *Player) Start() {
 	go p.Listen()
 
 	p.Tick = 0
-	tickChan := time.NewTicker(time.Millisecond * time.Duration((1000*60/p.BPM)/64)).C
-	logger.Infof("BPM:  %d, tick size: %2.1f ms (%d ticks / beat)", p.BPM, 1000/float64(p.ListeningRateHertz), p.ticksPerBeat)
+	tickTime := 1000 * time.Duration(1000000/p.ListeningRateHertz)
+	tickChan := time.NewTicker(tickTime).C
+	logger.Infof("BPM:  %d, tick size: %s (%d ticks / beat)", p.BPM, tickTime.String(), p.TicksPerBeat)
 	for {
 		select {
 		case <-tickChan:
@@ -150,7 +160,9 @@ func (p *Player) Start() {
 			p.Tick += 1
 			go p.Emit(p.Tick)
 
-			if p.Tick-p.lastNote > (p.ticksPerBeat*p.BeatsOfSilence) && p.KeysCurrentlyPressed == 0 {
+			if p.Tick-p.lastNote > (p.TicksPerBeat*p.BeatsOfSilence) && p.KeysCurrentlyPressed == 0 {
+				logger.Info("Silence exceeded, trying to improvise")
+				p.lastNote = p.Tick
 				go p.Improvisation()
 			}
 
@@ -173,8 +185,6 @@ func (p *Player) Teach() (err error) {
 	logger := log.WithFields(log.Fields{
 		"function": "Player.Teach",
 	})
-	// knownNotes := p.MusicHistory.GetAll()
-	p.lastNote = p.Tick + 64*4 // give some time to start
 	logger.Info("Sending history to AI")
 	err = p.AI.Learn(p.MusicHistory)
 	if err != nil {
@@ -196,7 +206,7 @@ func (p *Player) Improvisation() {
 			return
 		}
 	}
-	notes, err := p.AI.Lick(p.ticksPerBeat)
+	notes, err := p.AI.Lick(p.Tick)
 	if err != nil {
 		logger.Error(err.Error())
 	}
@@ -231,7 +241,7 @@ func (p *Player) Listen() {
 		event := <-ch
 		tickOfNote := p.Tick
 		// only allow up to 64th notes
-		if tickOfNote-prevTick < p.ticksPerBeat/64 {
+		if tickOfNote-prevTick < p.TicksPerBeat/p.Quantize {
 			tickOfNote = prevTick
 		}
 		note := music.Note{

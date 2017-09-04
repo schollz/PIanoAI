@@ -5,6 +5,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/schollz/rpiai-piano/ai2"
 	"github.com/schollz/rpiai-piano/player"
 	"github.com/urfave/cli"
 )
@@ -17,8 +18,6 @@ func main() {
 	app.Version = version
 	app.Compiled = time.Now()
 	app.Name = "rpiai-piano"
-	app.Usage = ""
-	app.UsageText = `		`
 	app.Flags = []cli.Flag{
 		cli.IntFlag{
 			Name:  "bpm",
@@ -40,50 +39,74 @@ func main() {
 			Value: 2,
 			Usage: "beats of silence before AI jumps in",
 		},
+		cli.IntFlag{
+			Name:  "quantize",
+			Value: 64,
+			Usage: "1/quantize is shortest possible note",
+		},
 		cli.StringFlag{
 			Name:  "file,f",
 			Value: "music_history.json",
 			Usage: "file save/load to when pressing bottom C",
 		},
+		cli.BoolFlag{
+			Name:  "debug",
+			Usage: "debug mode",
+		},
 		cli.IntFlag{
 			Name:  "link",
 			Value: 3,
-			Usage: "AI2 LinkLength",
+			Usage: "AI LinkLength",
 		},
 		cli.BoolFlag{
 			Name:  "jazzy",
-			Usage: "AI2 Jazziness",
+			Usage: "AI Jazziness",
 		},
 		cli.BoolFlag{
 			Name:  "stacatto",
-			Usage: "AI2 Stacattoness",
+			Usage: "AI Stacattoness",
 		},
 		cli.BoolFlag{
 			Name:  "chords",
-			Usage: "AI2 Allow chords",
+			Usage: "AI Allow chords",
 		},
 	}
 
 	app.Action = func(c *cli.Context) (err error) {
 		fmt.Println(`
 		
-		_______________________________________  
-	 |  | | | |  |  | | | | | |  |  | | | |  | 
-	 |  | | | |  |  | | | | | |  |  | | | |  | 
-	 |  | | | |  |  | | | | | |  |  | | | |  | 
-	 |  |_| |_|  |  |_| |_| |_|  |  |_| |_|  | 
-	 |   |   |   |   |   |   |   |   |   |   | 
-	 |   |   |   |   |   |   |   |   |   |   | 
-	 |___|___|___|___|___|___|___|___|___|___| 
-	 
+		______ _____                   ___  _____ 
+		| ___ \_   _|                 / _ \|_   _|
+		| |_/ / | |  __ _ _ __   ___ / /_\ \ | |  
+		|  __/  | | / _` + "`" + ` | '_ \ / _ \|  _  | | |  
+		| |    _| || (_| | | | | (_) | | | |_| |_ 
+		\_|    \___/\__,_|_| |_|\___/\_| |_/\___/ 
+																							
+																							
+		 _______________________________________  
+		|  | | | |  |  | | | | | |  |  | | | |  | 
+		|  | | | |  |  | | | | | |  |  | | | |  | 
+		|  | | | |  |  | | | | | |  |  | | | |  | 
+		|  |_| |_|  |  |_| |_| |_|  |  |_| |_|  | 
+		|   |   |   |   |   |   |   |   |   |   | 
+		|   |   |   |   |   |   |   |   |   |   | 
+		|___|___|___|___|___|___|___|___|___|___| 
+
 	 Lets play some music!
 											`)
-		p, err := player.New()
+		p, err := player.New(c.GlobalInt("bpm"), c.GlobalInt("tick"), c.GlobalBool("debug"))
 		if err != nil {
 			return
 		}
-		p.Start()
+		p.HighPassFilter = c.GlobalInt("hp")
+		p.AI = ai2.New(p.TicksPerBeat)
+		p.AI.HighPassFilter = c.GlobalInt("hp")
+		p.AI.LinkLength = c.GlobalInt("link")
+		p.AI.Jazzy = c.GlobalBool("jazzy")
+		p.AI.Stacatto = c.GlobalBool("stacatto")
+		p.AI.DisallowChords = !c.GlobalBool("chords")
 
+		p.Start()
 		return nil
 	}
 
