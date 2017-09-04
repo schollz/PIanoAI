@@ -64,8 +64,14 @@ Lets play some music!
 
 # Roadmap
 
+## Must haves
+
 - [ ] [External script that will start/stop piano based on plugging in Midi](https://raspberrypi.stackexchange.com/questions/19600/is-there-a-way-to-automatically-activate-a-script-when-a-usb-device-connects?newreg=270fe49c413340daa171e1dfdbf96de9)
 - [ ] Save sessions as MIDI
+
+## Want haves
+
+- [ ] Player changes velocity according to the host
 - [ ] Integrating more AI routines
 
 ## Similar projects
