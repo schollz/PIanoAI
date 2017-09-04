@@ -77,6 +77,7 @@ func New(bpm, listenHertz int, debug bool) (p *Player, err error) {
 	p.BPM = bpm
 	p.Tick = 0
 	p.Key = "C"
+	p.Quantize = 64
 
 	logger.Debug("Loading piano")
 	p.Piano, err = piano.New()
@@ -160,11 +161,11 @@ func (p *Player) Start() {
 			p.Tick += 1
 			go p.Emit(p.Tick)
 
-			if p.Tick-p.lastNote > (p.TicksPerBeat*p.BeatsOfSilence) && p.KeysCurrentlyPressed == 0 {
-				logger.Info("Silence exceeded, trying to improvise")
-				p.lastNote = p.Tick
-				go p.Improvisation()
-			}
+			// if p.Tick-p.lastNote > (p.TicksPerBeat*p.BeatsOfSilence) && p.KeysCurrentlyPressed == 0 {
+			// 	logger.Info("Silence exceeded, trying to improvise")
+			// 	p.lastNote = p.Tick
+			// 	go p.Improvisation()
+			// }
 
 			// if math.Mod(float64(p.Tick), 64) == 0 {
 			// 	logger.WithFields(log.Fields{

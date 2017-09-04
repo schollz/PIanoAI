@@ -93,6 +93,7 @@ func (ai *AI) decode(s string) []int {
 }
 
 func (ai *AI) Learn(mus *music.Music) (err error) {
+	fmt.Printf("%+v\n", ai)
 	logger := log.WithFields(log.Fields{
 		"function": "AI.Analyze",
 	})
@@ -104,32 +105,11 @@ func (ai *AI) Learn(mus *music.Music) (err error) {
 	ai.links = make(map[string]string)
 	ai.chords = make(map[string][]Chord)
 
-	// sanitize music (merge chords)
-	skipBeats := make(map[int]bool)
-	for beat1 := range mus.Notes {
-		for beat2 := range mus.Notes {
-			// if beat2 < beat1 || beat2-beat1 > ai.MaxChordDistance {
-			// 	continue
-			// }
-			for note := range mus.Notes[beat2] {
-				if _, ok := mus.Notes[beat1][note]; !ok {
-					mus.Notes[beat1][note] = music.Note{
-						On:       mus.Notes[beat2][note].On,
-						Pitch:    mus.Notes[beat2][note].Pitch,
-						Velocity: mus.Notes[beat2][note].Velocity,
-						Beat:     mus.Notes[beat2][note].Beat,
-					}
-					skipBeats[beat2] = true
-				}
-			}
-		}
-	}
-
 	// sort the beats
 	beats := make([]int, len(mus.Notes))
 	beatI := 0
 	for beat := range mus.Notes {
-		if _, ok := skipBeats[beat]; ok {
+		if beat == 0 {
 			continue
 		}
 		beats[beatI] = beat
@@ -149,7 +129,7 @@ func (ai *AI) Learn(mus *music.Music) (err error) {
 		velocity := 0
 
 		for note1 := range mus.Notes[beat1] {
-			if !mus.Notes[beat1][note1].On || note1 < ai.HighPassFilter || mus.Notes[beat1][note1].Velocity < 70 {
+			if !mus.Notes[beat1][note1].On || note1 < ai.HighPassFilter || mus.Notes[beat1][note1].Velocity < 70 || mus.Notes[beat1][note1].Beat != beat1 {
 				continue
 			}
 			chord.Pitches = append(chord.Pitches, note1)
@@ -165,6 +145,9 @@ func (ai *AI) Learn(mus *music.Music) (err error) {
 					continue
 				}
 				for note2 := range mus.Notes[beat2] {
+					if mus.Notes[beat2][note2].Beat != beat2 {
+						continue
+					}
 					if lag == 0 && mus.Notes[beat2][note2].On {
 						lag = beat2 - beat1
 					}
@@ -182,7 +165,6 @@ func (ai *AI) Learn(mus *music.Music) (err error) {
 		if lag > ai.TicksBerBeat*4 {
 			lag = ai.TicksBerBeat * 4
 		}
-		fmt.Println(duration, lag)
 		chord.Lag = lag
 		chordString := ai.encode(chord.Pitches)
 		if _, ok := ai.chords[chordString]; !ok {
@@ -192,10 +174,14 @@ func (ai *AI) Learn(mus *music.Music) (err error) {
 		ai.chordStringArray[chordArrayI] = chordString
 		ai.chordArray[chordArrayI] = chord
 		chordArrayI++
+		fmt.Println(chordArrayI, chord.Pitches, beat1, mus.Notes[beat1])
 	}
 	ai.chordArray = ai.chordArray[:chordArrayI]
 	ai.chordStringArray = ai.chordStringArray[:chordArrayI]
 	logger.Debugf("...analyzed %d chords", len(ai.chordArray))
+	if len(ai.chordArray) < 50 {
+		return errors.New("Need more notes")
+	}
 	ai.HasLearned = true
 	return
 }
@@ -218,7 +204,8 @@ func (ai *AI) Lick(startBeat int) (lick *music.Music, err error) {
 
 	for {
 		// expanded to allow it to wrap
-		windowSize := ai.WindowSizeMin - rand.Intn(ai.WindowSizeMax-ai.WindowSizeMin)
+		windowSize := ai.WindowSizeMin + rand.Intn(ai.WindowSizeMax-ai.WindowSizeMin)
+		logger.Debugf("Determing next %d notes", windowSize)
 		chordStringArray := append(ai.chordStringArray[(len(ai.chordStringArray)-windowSize-1):], ai.chordStringArray...)
 		chordStringArray = append(chordStringArray, ai.chordStringArray[:windowSize+1]...)
 
@@ -237,7 +224,8 @@ func (ai *AI) Lick(startBeat int) (lick *music.Music, err error) {
 		for _, index := range song {
 			lickLength += ai.chordArray[index].Lag
 		}
-		if lickLength > ai.TicksBerBeat*16 {
+		if lickLength > ai.TicksBerBeat*4 {
+			logger.Debugf("Lick is long enough (%d ticks / %d beats)", lickLength, lickLength/ai.TicksBerBeat)
 			break
 		}
 
@@ -247,7 +235,7 @@ func (ai *AI) Lick(startBeat int) (lick *music.Music, err error) {
 			sequenceToFind[i] = ai.chordStringArray[song[len(song)-(ai.LinkLength-i)]]
 		}
 		// find the starts of that sequence
-		fmt.Println(sequenceToFind)
+		logger.Debugf("sequence to find: %+v", sequenceToFind)
 		candidateStarts := []int{}
 		for i := range chordStringArray {
 			if i < windowSize || i > len(chordStringArray)-windowSize {
