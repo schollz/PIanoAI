@@ -71,7 +71,7 @@ Lets play some music!
 
 ## Want haves
 
-- [ ] Player changes velocity according to the host
+- [x] ~~Player changes velocity according to the host~~
 - [ ] Integrating more AI routines
 
 ## Similar projects
