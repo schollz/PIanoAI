@@ -42,6 +42,7 @@ rpiai-piano
 - [ ] Add a new button for reseting the system
 - [ ] Add a function for shutting down
 - [ ] Add command line functions
+- [ ] Save sessions as MIDI
 
 # Acknowledgements
 
