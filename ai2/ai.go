@@ -93,6 +93,8 @@ func (ai *AI) decode(s string) []int {
 }
 
 func (ai *AI) Learn(mus *music.Music) (err error) {
+	mus.RLock()
+	defer mus.RUnlock()
 	fmt.Printf("%+v\n", ai)
 	logger := log.WithFields(log.Fields{
 		"function": "AI.Analyze",
