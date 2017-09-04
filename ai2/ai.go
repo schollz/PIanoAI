@@ -2,7 +2,6 @@ package ai2
 
 import (
 	"errors"
-	"fmt"
 	"math/rand"
 	"sort"
 
@@ -95,7 +94,6 @@ func (ai *AI) decode(s string) []int {
 func (ai *AI) Learn(mus *music.Music) (err error) {
 	mus.RLock()
 	defer mus.RUnlock()
-	fmt.Printf("%+v\n", ai)
 	logger := log.WithFields(log.Fields{
 		"function": "AI.Analyze",
 	})
@@ -169,14 +167,9 @@ func (ai *AI) Learn(mus *music.Music) (err error) {
 		}
 		chord.Lag = lag
 		chordString := ai.encode(chord.Pitches)
-		if _, ok := ai.chords[chordString]; !ok {
-			ai.chords[chordString] = []Chord{}
-		}
-		ai.chords[chordString] = append(ai.chords[chordString], chord)
 		ai.chordStringArray[chordArrayI] = chordString
 		ai.chordArray[chordArrayI] = chord
 		chordArrayI++
-		fmt.Println(chordArrayI, chord.Pitches, beat1, mus.Notes[beat1])
 	}
 	ai.chordArray = ai.chordArray[:chordArrayI]
 	ai.chordStringArray = ai.chordStringArray[:chordArrayI]
@@ -199,6 +192,7 @@ func (ai *AI) Lick(startBeat int) (lick *music.Music, err error) {
 		err = errors.New("Learning must be finished")
 		return
 	}
+	ai.IsLearning = true
 	lick = music.New()
 
 	start := rand.Intn(len(ai.chordArray))
@@ -263,7 +257,6 @@ func (ai *AI) Lick(startBeat int) (lick *music.Music, err error) {
 		}
 	}
 
-	// fmt.Println(song)
 	// for i, s := range ai.chordStringArray {
 	// 	fmt.Println(i, s)
 	// }
@@ -314,5 +307,6 @@ func (ai *AI) Lick(startBeat int) (lick *music.Music, err error) {
 			}
 		}
 	}
+	ai.IsLearning = false
 	return
 }

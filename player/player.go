@@ -68,6 +68,7 @@ type Player struct {
 	ManualAI bool
 
 	LastHostPress int
+	IsImprovising bool
 }
 
 // New initializes the parameters and connects up the piano
@@ -208,10 +209,11 @@ func (p *Player) Improvisation() {
 	logger := log.WithFields(log.Fields{
 		"function": "Player.Improvisation",
 	})
-	if p.MusicFuture.HasFuture(p.Tick) {
+	if p.MusicFuture.HasFuture(p.Tick) || p.IsImprovising {
 		logger.Debug("Improvising is already in progress")
 		return
 	}
+	p.IsImprovising = true
 	err := p.Teach()
 	if err != nil {
 		return
@@ -226,6 +228,7 @@ func (p *Player) Improvisation() {
 		p.MusicFuture.AddNote(note)
 	}
 	logger.Infof("Added %d notes from AI", len(newNotes))
+	p.IsImprovising = false
 }
 
 // Emit will play/stop notes depending on the current beat.
