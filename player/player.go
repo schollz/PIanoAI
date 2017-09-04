@@ -167,7 +167,7 @@ func (p *Player) Start() {
 			go p.Emit(p.Tick)
 
 			if !p.ManualAI {
-				if p.Tick-p.lastNote > (p.TicksPerBeat*p.BeatsOfSilence) && p.KeysCurrentlyPressed == 0 {
+				if p.Tick-p.lastNote > (p.TicksPerBeat*p.BeatsOfSilence) && p.KeysCurrentlyPressed == 0 && !p.AI.IsLearning {
 					logger.Info("Silence exceeded, trying to improvise")
 					p.lastNote = p.Tick
 					go p.Improvisation()
