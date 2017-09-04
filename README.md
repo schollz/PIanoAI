@@ -42,24 +42,40 @@ go get -v github.com/schollz/pianoai
 
 ```
 $ pianoai
-      ______ _____                   ___  _____
-      | ___ \_   _|                 / _ \|_   _|
-      | |_/ / | |  __ _ _ __   ___ / /_\ \ | |
-      |  __/  | | / _` | '_ \ / _ \|  _  | | |
-      | |    _| || (_| | | | | (_) | | | |_| |_
-      \_|    \___/\__,_|_| |_|\___/\_| |_/\___/
+```
 
+For some extra jazziness do
 
-        _______________________________________
-      |  | | | |  |  | | | | | |  |  | | | |  |
-      |  | | | |  |  | | | | | |  |  | | | |  |
-      |  | | | |  |  | | | | | |  |  | | | |  |
-      |  |_| |_|  |  |_| |_| |_|  |  |_| |_|  |
-      |   |   |   |   |   |   |   |   |   |   |
-      |   |   |   |   |   |   |   |   |   |   |
-      |___|___|___|___|___|___|___|___|___|___|
+```
+$ pianoai --jazzy
+```
 
-Lets play some music!
+## Options 
+
+### Piano keyboard controls
+
+When you play, you can always trigger learning and improvising by hitting the top B or top C respectively, on the piano keyboard (assuming an 88-key keyboard). If you use `--manual` mode then you can only hear improvisation after triggering. Normally, however, the improvisation will start as soon as it has enough notes and you leave enough space for the improvisation to take place (usually a few beats).
+
+You can save your current data by pressing the bottom A on the piano keyboard and you can play back what *you* played by hitting the bottom Bb on the piano keyboard. Currently there is not a way to save the AI playing (but its in the roadmap, see below).
+
+### Command line options
+
+There are many command-line options for tuning the AI, but feel free to play with the code as well. Current options:
+
+```
+   --bpm value             BPM to use (default: 120)
+   --tick value            tick frequency in hertz (default: 500)
+   --hp value              high pass note threshold to use for leraning (default: 65)
+   --waits value           beats of silence before AI jumps in (default: 2)
+   --quantize value        1/quantize is shortest possible note (default: 64)
+   --file value, -f value  file save/load to when pressing bottom C (default: "music_history.json")
+   --debug                 debug mode
+   --manual                AI is activated manually
+   --link value            AI LinkLength (default: 3)
+   --jazzy                 AI Jazziness
+   --stacatto              AI Stacattoness
+   --chords                AI Allow chords
+   --follow                AI velocities follow the host
 ```
 
 # Roadmap
