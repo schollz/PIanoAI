@@ -12,6 +12,10 @@ Teaching for ~30 seconds and then jamming. Here's a video (I fast forwarded to t
 
 Here are some longer clips of me playing with the AI: [clip #2](https://www.youtube.com/watch?v=vF0uQax56a4) [clip #3](https://www.youtube.com/watch?v=yYuBqUxZtp0)
 
+# Read about it
+
+Read more about it at [rpiai.com/piano](https://rpiai.com/piano/).
+
 # Try it
 
 1. Get a MIDI-enabled keyboard and two-way MIDI adapter
