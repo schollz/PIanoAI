@@ -65,12 +65,13 @@ func New() (ai *AI) {
 	ai.hasher = hashids.NewData()
 	ai.hasher.Salt = "piano"
 	ai.hasher.MinLength = 8
-	ai.LinkLength = 2
+	ai.LinkLength = 3
 	ai.WindowSizeMin = 30
 	ai.WindowSizeMax = 50
 	ai.Jazzy = true
-	ai.DisallowChords = false
-	ai.MaxChordDistance = 7 // TODO: THIS SHOULD DEPEND ON BPM
+	ai.DisallowChords = true
+	ai.MaxChordDistance = 6 // TODO: THIS SHOULD DEPEND ON BPM
+	ai.Stacatto = true
 	return ai
 }
 
