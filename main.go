@@ -74,6 +74,10 @@ func main() {
 			Name:  "chords",
 			Usage: "AI Allow chords",
 		},
+		cli.BoolFlag{
+			Name:  "follow",
+			Usage: "AI velocities follow the host",
+		},
 	}
 
 	app.Action = func(c *cli.Context) (err error) {
@@ -110,6 +114,7 @@ func main() {
 		p.AI.Stacatto = c.GlobalBool("stacatto")
 		p.AI.DisallowChords = !c.GlobalBool("chords")
 		p.ManualAI = c.GlobalBool("manual")
+		p.UseHostVelocity = c.GlobalBool("follow")
 		p.Start()
 		return nil
 	}

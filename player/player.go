@@ -67,8 +67,12 @@ type Player struct {
 	// flag to allow only manually activation
 	ManualAI bool
 
+	// UseHostVelocity changes emitted notes to follow the velocity of the host
+	UseHostVelocity bool
+
 	LastHostPress int
 	IsImprovising bool
+	lastVelocity  int
 }
 
 // New initializes the parameters and connects up the piano
@@ -237,6 +241,11 @@ func (p *Player) Emit(beat int) {
 	hasNotes, notes := p.MusicFuture.Get(beat)
 	if hasNotes {
 		if p.Tick-p.LastHostPress > p.BeatsOfSilence*p.TicksPerBeat && p.KeysCurrentlyPressed == 0 {
+			if p.UseHostVelocity && p.lastVelocity > 0 {
+				for i := range notes {
+					notes[i].Velocity = p.lastVelocity
+				}
+			}
 			go p.Piano.PlayNotes(notes, p.BPM)
 		}
 		p.lastNote = p.Tick
@@ -301,6 +310,7 @@ func (p *Player) Listen() {
 			}
 			if note.On && note.Pitch > p.HighPassFilter {
 				p.LastHostPress = p.Tick
+				p.lastVelocity = note.Velocity
 				p.KeysCurrentlyPressed++
 			}
 			logger.Infof("Adding %+v", note)
