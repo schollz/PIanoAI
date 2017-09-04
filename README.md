@@ -2,7 +2,7 @@
 
 # PIanoAI (Piano AI on a Raspberry Pi)
 
-This is code for providing an augmented piano playing experience. When run, this code will provide computer accompaniment that learns in real-time from the human host pianist. Then the host pianist stops playing for a given amount of time, the computer AI will then improvise in the space using the style learned from the host.
+This is code for providing an augmented piano playing experience. When run, this code will provide computer accompaniment that learns in real-time from the human host pianist. When the host pianist stops playing for a given amount of time, the computer AI will then improvise in the space using the style learned from the host.
 
 # See it
 
