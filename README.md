@@ -6,7 +6,7 @@ This is code for providing an augmented piano playing experience. When run, this
 
 # See it
 
-Teaching for ~30 seconds and then jamming.
+Teaching for ~30 seconds and then jamming. Here's a video (I fast forwarded to the part where the AI will start):
 
 [![Playing](https://img.youtube.com/vi/bvMW71BJofc/0.jpg)](https://www.youtube.com/watch?v=bvMW71BJofc&t=0m44s)
 
