@@ -212,11 +212,9 @@ func (p *Player) Improvisation() {
 		logger.Debug("Improvising is already in progress")
 		return
 	}
-	if !p.AI.HasLearned {
-		err := p.Teach()
-		if err != nil {
-			return
-		}
+	err := p.Teach()
+	if err != nil {
+		return
 	}
 	logger.Info("Getting improvisation")
 	notes, err := p.AI.Lick(p.Tick)
