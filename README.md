@@ -10,6 +10,7 @@ Teaching for ~30 seconds and then jamming. Here's a video (I fast forwarded to t
 
 [![Playing](https://img.youtube.com/vi/bvMW71BJofc/0.jpg)](https://www.youtube.com/watch?v=bvMW71BJofc&t=0m44s)
 
+Here are some longer clips of me playing with the AI: [clip #2](https://www.youtube.com/watch?v=vF0uQax56a4) [clip #3](https://www.youtube.com/watch?v=yYuBqUxZtp0)
 
 # Try it
 
