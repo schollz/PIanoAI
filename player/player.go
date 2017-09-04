@@ -310,8 +310,10 @@ func (p *Player) Listen() {
 			}
 			if note.On && note.Pitch > p.HighPassFilter {
 				p.LastHostPress = p.Tick
-				p.lastVelocity = note.Velocity
 				p.KeysCurrentlyPressed++
+			}
+			if note.On && p.UseHostVelocity {
+				p.lastVelocity = note.Velocity
 			}
 			logger.Infof("Adding %+v", note)
 			go p.MusicHistory.AddNote(note)
