@@ -34,7 +34,7 @@ type AI struct {
 	LinkLength int
 
 	// WindowSize is how many total notes to include
-	WindowSize int
+	WindowSizeMin, WindowSizeMax int
 
 	hasher           *hashids.HashIDData
 	links            map[string]string
@@ -42,6 +42,12 @@ type AI struct {
 	chords           map[string][]Chord
 	chordArray       []Chord
 	chordStringArray []string
+
+	Jazzy          bool
+	Stacatto       bool
+	DisallowChords bool
+
+	MaxChordDistance int
 }
 
 type Chord struct {
@@ -53,14 +59,18 @@ type Chord struct {
 
 func New() (ai *AI) {
 	ai = new(AI)
-	ai.HighPassFilter = 60
+	ai.HighPassFilter = 65
 	ai.MinimumLickLength = 2
 	ai.MaximumLickLength = 30
 	ai.hasher = hashids.NewData()
 	ai.hasher.Salt = "piano"
 	ai.hasher.MinLength = 8
-	ai.LinkLength = 3
-	ai.WindowSize = 30
+	ai.LinkLength = 2
+	ai.WindowSizeMin = 30
+	ai.WindowSizeMax = 50
+	ai.Jazzy = true
+	ai.DisallowChords = false
+	ai.MaxChordDistance = 7 // TODO: THIS SHOULD DEPEND ON BPM
 	return ai
 }
 
@@ -79,7 +89,7 @@ func (ai *AI) decode(s string) []int {
 	return h.Decode(s)
 }
 
-func (ai *AI) Learn(music *music.Music) (err error) {
+func (ai *AI) Learn(mus *music.Music) (err error) {
 	logger := log.WithFields(log.Fields{
 		"function": "AI.Analyze",
 	})
@@ -88,10 +98,34 @@ func (ai *AI) Learn(music *music.Music) (err error) {
 	ai.links = make(map[string]string)
 	ai.chords = make(map[string][]Chord)
 
+	// sanitize music (merge chords)
+	skipBeats := make(map[int]bool)
+	for beat1 := range mus.Notes {
+		for beat2 := range mus.Notes {
+			if beat2 < beat1 || beat2-beat1 > ai.MaxChordDistance {
+				continue
+			}
+			for note := range mus.Notes[beat2] {
+				if _, ok := mus.Notes[beat1][note]; !ok {
+					mus.Notes[beat1][note] = music.Note{
+						On:       mus.Notes[beat2][note].On,
+						Pitch:    mus.Notes[beat2][note].Pitch,
+						Velocity: mus.Notes[beat2][note].Velocity,
+						Beat:     mus.Notes[beat2][note].Beat,
+					}
+					skipBeats[beat2] = true
+				}
+			}
+		}
+	}
+
 	// sort the beats
-	beats := make([]int, len(music.Notes))
+	beats := make([]int, len(mus.Notes))
 	beatI := 0
-	for beat := range music.Notes {
+	for beat := range mus.Notes {
+		if _, ok := skipBeats[beat]; ok {
+			continue
+		}
 		beats[beatI] = beat
 		beatI++
 	}
@@ -108,13 +142,13 @@ func (ai *AI) Learn(music *music.Music) (err error) {
 		lag := 0
 		velocity := 0
 
-		for note1 := range music.Notes[beat1] {
-			if !music.Notes[beat1][note1].On || note1 < ai.HighPassFilter {
+		for note1 := range mus.Notes[beat1] {
+			if !mus.Notes[beat1][note1].On || note1 < ai.HighPassFilter || mus.Notes[beat1][note1].Velocity < 70 {
 				continue
 			}
 			chord.Pitches = append(chord.Pitches, note1)
 			if velocity == 0 {
-				velocity = music.Notes[beat1][note1].Velocity
+				velocity = mus.Notes[beat1][note1].Velocity
 			}
 			if duration > 0 && lag > 0 {
 				continue
@@ -124,11 +158,11 @@ func (ai *AI) Learn(music *music.Music) (err error) {
 				if beat2 <= beat1 {
 					continue
 				}
-				for note2 := range music.Notes[beat2] {
-					if lag == 0 && music.Notes[beat2][note2].On {
+				for note2 := range mus.Notes[beat2] {
+					if lag == 0 && mus.Notes[beat2][note2].On {
 						lag = beat2 - beat1
 					}
-					if duration == 0 && note2 == note1 && !music.Notes[beat2][note2].On {
+					if duration == 0 && note2 == note1 && !mus.Notes[beat2][note2].On {
 						duration = beat2 - beat1
 					}
 				}
@@ -178,9 +212,9 @@ func (ai *AI) Lick(startBeat int) (lick *music.Music, err error) {
 
 	for {
 		// expanded to allow it to wrap
-		windowSize := ai.WindowSize - (ai.WindowSize / 5) + rand.Intn(ai.WindowSize/5*2)
-		chordStringArray := append(ai.chordStringArray[(len(ai.chordStringArray)-windowSize):], ai.chordStringArray...)
-		chordStringArray = append(chordStringArray, ai.chordStringArray[:windowSize]...)
+		windowSize := ai.WindowSizeMin - rand.Intn(ai.WindowSizeMax-ai.WindowSizeMin)
+		chordStringArray := append(ai.chordStringArray[(len(ai.chordStringArray)-windowSize-1):], ai.chordStringArray...)
+		chordStringArray = append(chordStringArray, ai.chordStringArray[:windowSize+1]...)
 
 		// add the chord indicies to the song
 		for i := 0; i < windowSize; i++ {
@@ -226,7 +260,11 @@ func (ai *AI) Lick(startBeat int) (lick *music.Music, err error) {
 		}
 
 		// pick a new start
-		start = candidateStarts[rand.Intn(len(candidateStarts))] - windowSize + ai.LinkLength
+		if len(candidateStarts) == 0 {
+			start += windowSize
+		} else {
+			start = candidateStarts[rand.Intn(len(candidateStarts))] - windowSize + ai.LinkLength + 1
+		}
 	}
 
 	// fmt.Println(song)
@@ -236,30 +274,48 @@ func (ai *AI) Lick(startBeat int) (lick *music.Music, err error) {
 
 	// make them into a song
 	firstBeat := startBeat
+	quantizer := 8
 	for _, index := range song {
 		extraDuration := 0
-		if rand.Intn(20) == 1 {
-			extraDuration += 64 * (1 + rand.Intn(4))
+		stacatto := 0
+		if ai.Stacatto {
+			stacatto = 2
 		}
+		if ai.Jazzy {
+			if rand.Intn(20) == 1 {
+				extraDuration += 64 * (1 + rand.Intn(4))
+			}
+		}
+
 		for _, pitch := range ai.chordArray[index].Pitches {
-			logger.Debugf("Adding note %d @ %d", pitch, (firstBeat)/8*8)
-			lick.AddNote(music.Note{
+			logger.Debugf("Adding note %d @ %d with lag %d", pitch, (firstBeat)/quantizer*quantizer, ai.chordArray[index].Lag)
+			onNote := music.Note{
 				On:       true,
 				Pitch:    pitch,
 				Velocity: ai.chordArray[index].Velocity,
-				Beat:     (firstBeat) / 8 * 8,
-			})
-
-			lick.AddNote(music.Note{
+				Beat:     (firstBeat) / quantizer * quantizer,
+			}
+			offNote := music.Note{
 				On:       false,
 				Pitch:    pitch,
 				Velocity: 0,
-				Beat:     (firstBeat+ai.chordArray[index].Duration)/8*8 + extraDuration,
-			})
+				Beat:     (firstBeat+ai.chordArray[index].Duration)/quantizer*quantizer + extraDuration,
+			}
+			if offNote.Beat-onNote.Beat > 16 {
+				offNote.Beat -= stacatto
+			}
+			lick.AddNote(onNote)
+			lick.AddNote(offNote)
+			if ai.DisallowChords {
+				logger.Debug("Disallowing chord, breaking")
+				break
+			}
 		}
-		firstBeat += (ai.chordArray[index].Lag)/8*8 + extraDuration
-		if rand.Intn(10) == 1 {
-			firstBeat += 64
+		firstBeat += (ai.chordArray[index].Lag)/quantizer*quantizer + extraDuration + stacatto
+		if ai.Jazzy {
+			if rand.Intn(10) == 1 {
+				firstBeat += 64
+			}
 		}
 	}
 	return

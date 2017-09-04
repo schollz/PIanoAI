@@ -3,8 +3,8 @@ package piano
 import (
 	"sync"
 
-	"github.com/schollz/rpiai-piano/music"
 	"github.com/rakyll/portmidi"
+	"github.com/schollz/rpiai-piano/music"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -117,7 +117,7 @@ func (p *Piano) PlayNotes(notes []music.Note, bpm int) (err error) {
 			logger.WithFields(log.Fields{
 				"p": note.Pitch,
 				"v": note.Velocity,
-			}).Debug("on")
+			}).Debugf("on, beat %d", note.Beat)
 			err = p.outputStream.WriteShort(0x90, int64(note.Pitch), int64(note.Velocity))
 			if err != nil {
 				logger.WithFields(log.Fields{
@@ -131,7 +131,7 @@ func (p *Piano) PlayNotes(notes []music.Note, bpm int) (err error) {
 			logger.WithFields(log.Fields{
 				"p": note.Pitch,
 				"v": note.Velocity,
-			}).Debug("off")
+			}).Debugf("off, beat %d", note.Beat)
 			err = p.outputStream.WriteShort(0x80, int64(note.Pitch), int64(note.Velocity))
 			if err != nil {
 				logger.WithFields(log.Fields{

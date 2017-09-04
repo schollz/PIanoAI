@@ -33,7 +33,7 @@ func main() {
 Lets play some music!
                    `)
 	var err error
-	p, err := player.New(120)
+	p, err := player.New(240)
 	if err != nil {
 		panic(err)
 	}
