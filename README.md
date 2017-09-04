@@ -4,7 +4,6 @@
 
 This is code for providing an augmented piano playing experience. When run, this code will provide computer accompaniment that learns in real-time from the human host pianist. Then the host pianist stops playing for a given amount of time, the computer AI will then improvise in the space using the style learned from the host.
 
-
 # Try it
 
 1. Get a MIDI-enabled keyboard and two-way MIDI adapter
@@ -51,11 +50,16 @@ $ pianoai
 Lets play some music!
 ```
 
-## Roadmap
+# Roadmap
 
 - [ ] [External script that will start/stop piano based on plugging in Midi](https://raspberrypi.stackexchange.com/questions/19600/is-there-a-way-to-automatically-activate-a-script-when-a-usb-device-connects?newreg=270fe49c413340daa171e1dfdbf96de9)
 - [ ] Save sessions as MIDI
 - [ ] Integrating more AI routines
+
+## Similar projects
+
+- [Google A.I. Duet](https://github.com/googlecreativelab/aiexperiments-ai-duet)
+- [DeepJazz](https://github.com/jisungk/deepjazz)
 
 # Acknowledgements
 
@@ -66,3 +70,6 @@ Thanks to [@rakyll](https://github.com/rakyll) for porting `libportmidi` to Go.
 
 `portmidi` is Licensed under Apache License, Version 2.0.
 
+# Get in touch
+ 
+Like this? Need help? Tweet at me [@yakczar](https://twitter.com/intent/tweet?text=@yakczar%20).
