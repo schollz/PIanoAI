@@ -8,7 +8,7 @@ import (
 	"strconv"
 
 	"github.com/schollz/gobrain"
-	"github.com/schollz/rpiai-piano/music"
+	"github.com/schollz/pianoai/music"
 	log "github.com/sirupsen/logrus"
 )
 

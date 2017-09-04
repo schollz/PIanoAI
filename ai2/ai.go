@@ -6,7 +6,7 @@ import (
 	"math/rand"
 	"sort"
 
-	"github.com/schollz/rpiai-piano/music"
+	"github.com/schollz/pianoai/music"
 	log "github.com/sirupsen/logrus"
 	hashids "github.com/speps/go-hashids"
 )

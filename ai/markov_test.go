@@ -5,7 +5,7 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/schollz/rpiai-piano/music"
+	"github.com/schollz/pianoai/music"
 )
 
 func TestAI1(t *testing.T) {

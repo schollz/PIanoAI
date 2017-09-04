@@ -5,8 +5,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/schollz/rpiai-piano/ai2"
-	"github.com/schollz/rpiai-piano/player"
+	"github.com/schollz/pianoai/ai2"
+	"github.com/schollz/pianoai/player"
 	"github.com/urfave/cli"
 )
 
@@ -17,7 +17,7 @@ func main() {
 	app := cli.NewApp()
 	app.Version = version
 	app.Compiled = time.Now()
-	app.Name = "rpiai-piano"
+	app.Name = "pianoai"
 	app.Flags = []cli.Flag{
 		cli.IntFlag{
 			Name:  "bpm",

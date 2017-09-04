@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/schollz/rpiai-piano/music"
+	"github.com/schollz/pianoai/music"
 )
 
 func TestAI2(t *testing.T) {
