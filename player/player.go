@@ -45,7 +45,7 @@ type Player struct {
 	MusicHistoryFile string
 
 	// AI stores the AI being used
-	AI *ai.AI
+	AI *ai.AI2
 	// BeatsOfSilence waits this number of beats before asking
 	// the AI for an improvisation
 	BeatsOfSilence int
