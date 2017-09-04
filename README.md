@@ -9,7 +9,7 @@ This is code for providing an augmented piano playing experience. When run, this
 
 1. Get a MIDI-enabled keyboard and two-way MIDI adapter
 2. Get a Raspberry Pi (however, a Windows / Linux / OS X computer should also work) and connect it to the MIDI keyboard.
-3. Build latest version of `libportmidi` (if your using Mac just do `brew install portmidi`, if Windows just [Download it](https://sourceforge.net/projects/portmedia/files/portmidi/217/pmdefaults-setup-w32-217.zip/download)))
+3. Build latest version of `libportmidi` (OS X: `brew install portmidi`).
 
 ```
 sudo apt-get install cmake-curses-gui libasound2-dev
@@ -20,18 +20,35 @@ make
 sudo make install
 ```
 
-4. [Install Go](https://golang.org/dl/).
-5. Install `rpiai-piano`:
+4. [Download the latest release](https://github.com/schollz/pianoai/releases/latest) OR [install Go](https://golang.org/dl/) and `go get` it:
 
 ```
-go get -v github.com/schollz/rpiai-piano
+go get -v github.com/schollz/pianoai
 ```
 
-6. Add `export LD_LIBRARY_PATH=/usr/local/lib` to your `.bashrc`. (Unnessecary if you did not build `portmidi`). Reload bash `source ~/.bashrc` if this is the first time.
-7. Play!
+5. Add `export LD_LIBRARY_PATH=/usr/local/lib` to your `.bashrc`. (Unnessecary if you did not build `portmidi`). Reload bash `source ~/.bashrc` if this is the first time.
+6. Play!
 
 ```
-rpiai-piano
+$ pianoai
+      ______ _____                   ___  _____
+      | ___ \_   _|                 / _ \|_   _|
+      | |_/ / | |  __ _ _ __   ___ / /_\ \ | |
+      |  __/  | | / _` | '_ \ / _ \|  _  | | |
+      | |    _| || (_| | | | | (_) | | | |_| |_
+      \_|    \___/\__,_|_| |_|\___/\_| |_/\___/
+
+
+        _______________________________________
+      |  | | | |  |  | | | | | |  |  | | | |  |
+      |  | | | |  |  | | | | | |  |  | | | |  |
+      |  | | | |  |  | | | | | |  |  | | | |  |
+      |  |_| |_|  |  |_| |_| |_|  |  |_| |_|  |
+      |   |   |   |   |   |   |   |   |   |   |
+      |   |   |   |   |   |   |   |   |   |   |
+      |___|___|___|___|___|___|___|___|___|___|
+
+Lets play some music!
 ```
 
 ## Roadmap
