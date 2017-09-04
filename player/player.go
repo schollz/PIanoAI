@@ -6,7 +6,7 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/schollz/rpiai-piano/ai"
+	"github.com/schollz/rpiai-piano/ai2"
 	"github.com/schollz/rpiai-piano/music"
 	"github.com/schollz/rpiai-piano/piano"
 	log "github.com/sirupsen/logrus"
@@ -45,7 +45,7 @@ type Player struct {
 	MusicHistoryFile string
 
 	// AI stores the AI being used
-	AI *ai.AI2
+	AI *ai2.AI
 	// BeatsOfSilence waits this number of beats before asking
 	// the AI for an improvisation
 	BeatsOfSilence int
@@ -95,7 +95,7 @@ func New(bpm int, beats ...int) (p *Player, err error) {
 	p.HighPassFilter = 70
 
 	logger.Debug("Loading AI")
-	p.AI = ai.New()
+	p.AI = ai2.New()
 	p.AI.HighPassFilter = p.HighPassFilter
 
 	return
@@ -173,10 +173,10 @@ func (p *Player) Teach() (err error) {
 	logger := log.WithFields(log.Fields{
 		"function": "Player.Teach",
 	})
-	knownNotes := p.MusicHistory.GetAll()
+	// knownNotes := p.MusicHistory.GetAll()
 	p.LastNote = p.Beat + 64*4 // give some time to start
 	logger.Info("Sending history to AI")
-	err = p.AI.Learn(knownNotes)
+	err = p.AI.Learn(p.MusicHistory)
 	if err != nil {
 		logger.Warn(err.Error())
 		return

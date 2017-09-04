@@ -59,8 +59,8 @@ func New() (ai *AI) {
 	ai.hasher = hashids.NewData()
 	ai.hasher.Salt = "piano"
 	ai.hasher.MinLength = 8
-	ai.LinkLength = 2
-	ai.WindowSize = 5
+	ai.LinkLength = 3
+	ai.WindowSize = 30
 	return ai
 }
 
@@ -79,7 +79,7 @@ func (ai *AI) decode(s string) []int {
 	return h.Decode(s)
 }
 
-func (ai *AI) Learn(music *music.Music) (analyzedNotes [][]int) {
+func (ai *AI) Learn(music *music.Music) (err error) {
 	logger := log.WithFields(log.Fields{
 		"function": "AI.Analyze",
 	})
@@ -121,16 +121,15 @@ func (ai *AI) Learn(music *music.Music) (analyzedNotes [][]int) {
 			}
 			// determine duration and lag
 			for _, beat2 := range beats {
-				if beat2 < beat1 {
+				if beat2 <= beat1 {
 					continue
 				}
-				if lag == 0 {
-					lag = beat2 - beat1
-				}
 				for note2 := range music.Notes[beat2] {
-					if note2 == note1 && !music.Notes[beat2][note2].On {
+					if lag == 0 && music.Notes[beat2][note2].On {
+						lag = beat2 - beat1
+					}
+					if duration == 0 && note2 == note1 && !music.Notes[beat2][note2].On {
 						duration = beat2 - beat1
-						break
 					}
 				}
 			}
@@ -140,6 +139,10 @@ func (ai *AI) Learn(music *music.Music) (analyzedNotes [][]int) {
 		}
 		chord.Velocity = velocity
 		chord.Duration = duration
+		if lag > 64*4 {
+			lag = 64 * 4
+		}
+		fmt.Println(duration, lag)
 		chord.Lag = lag
 		chordString := ai.encode(chord.Pitches)
 		if _, ok := ai.chords[chordString]; !ok {
@@ -174,10 +177,6 @@ func (ai *AI) Lick(startBeat int) (lick *music.Music, err error) {
 	song := []int{}
 
 	for {
-		// ending criteria
-		if len(song) > 10 {
-			break
-		}
 		// add the chord indicies to the song
 		for i := 0; i < ai.WindowSize; i++ {
 			startI := start + i
@@ -186,6 +185,15 @@ func (ai *AI) Lick(startBeat int) (lick *music.Music, err error) {
 				start = -1 * i
 			}
 			song = append(song, startI)
+		}
+
+		// ending criteria
+		lickLength := 0
+		for _, index := range song {
+			lickLength += ai.chordArray[index].Lag
+		}
+		if lickLength > 64*16 {
+			break
 		}
 
 		// find a new start sequence that is the same as the end sequence of the current song
@@ -234,7 +242,7 @@ func (ai *AI) Lick(startBeat int) (lick *music.Music, err error) {
 			lick.AddNote(music.Note{
 				On:       false,
 				Pitch:    pitch,
-				Velocity: ai.chordArray[index].Velocity,
+				Velocity: 0,
 				Beat:     firstBeat + ai.chordArray[index].Duration,
 			})
 		}
