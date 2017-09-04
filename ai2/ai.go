@@ -163,22 +163,27 @@ func (ai *AI) Learn(music *music.Music) (err error) {
 // Lick generates a sequence of chords using the Markov
 // probabilities. Must run Learn() beforehand.
 func (ai *AI) Lick(startBeat int) (lick *music.Music, err error) {
+	logger := log.WithFields(log.Fields{
+		"function": "AI.Lick",
+	})
+
 	if !ai.HasLearned || ai.IsLearning {
 		err = errors.New("Learning must be finished")
 		return
 	}
 	lick = music.New()
 
-	// expanded to allow it to wrap
-	chordStringArray := append(ai.chordStringArray[(len(ai.chordStringArray)-ai.WindowSize):], ai.chordStringArray...)
-	chordStringArray = append(chordStringArray, ai.chordStringArray[:ai.WindowSize]...)
-
 	start := rand.Intn(len(ai.chordArray))
 	song := []int{}
 
 	for {
+		// expanded to allow it to wrap
+		windowSize := ai.WindowSize - (ai.WindowSize / 5) + rand.Intn(ai.WindowSize/5*2)
+		chordStringArray := append(ai.chordStringArray[(len(ai.chordStringArray)-windowSize):], ai.chordStringArray...)
+		chordStringArray = append(chordStringArray, ai.chordStringArray[:windowSize]...)
+
 		// add the chord indicies to the song
-		for i := 0; i < ai.WindowSize; i++ {
+		for i := 0; i < windowSize; i++ {
 			startI := start + i
 			if startI >= len(ai.chordStringArray) {
 				startI = 0
@@ -205,7 +210,7 @@ func (ai *AI) Lick(startBeat int) (lick *music.Music, err error) {
 		fmt.Println(sequenceToFind)
 		candidateStarts := []int{}
 		for i := range chordStringArray {
-			if i < ai.WindowSize || i > len(chordStringArray)-ai.WindowSize {
+			if i < windowSize || i > len(chordStringArray)-windowSize {
 				continue
 			}
 			foundMatch := true
@@ -221,7 +226,7 @@ func (ai *AI) Lick(startBeat int) (lick *music.Music, err error) {
 		}
 
 		// pick a new start
-		start = candidateStarts[rand.Intn(len(candidateStarts))] - ai.WindowSize + ai.LinkLength
+		start = candidateStarts[rand.Intn(len(candidateStarts))] - windowSize + ai.LinkLength
 	}
 
 	// fmt.Println(song)
@@ -232,21 +237,30 @@ func (ai *AI) Lick(startBeat int) (lick *music.Music, err error) {
 	// make them into a song
 	firstBeat := startBeat
 	for _, index := range song {
+		extraDuration := 0
+		if rand.Intn(20) == 1 {
+			extraDuration += 64 * (1 + rand.Intn(4))
+		}
 		for _, pitch := range ai.chordArray[index].Pitches {
+			logger.Debugf("Adding note %d @ %d", pitch, (firstBeat)/8*8)
 			lick.AddNote(music.Note{
 				On:       true,
 				Pitch:    pitch,
 				Velocity: ai.chordArray[index].Velocity,
-				Beat:     firstBeat,
+				Beat:     (firstBeat) / 8 * 8,
 			})
+
 			lick.AddNote(music.Note{
 				On:       false,
 				Pitch:    pitch,
 				Velocity: 0,
-				Beat:     firstBeat + ai.chordArray[index].Duration,
+				Beat:     (firstBeat+ai.chordArray[index].Duration)/8*8 + extraDuration,
 			})
 		}
-		firstBeat += ai.chordArray[index].Lag
+		firstBeat += (ai.chordArray[index].Lag)/8*8 + extraDuration
+		if rand.Intn(10) == 1 {
+			firstBeat += 64
+		}
 	}
 	return
 }
