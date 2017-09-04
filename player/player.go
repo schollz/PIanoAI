@@ -63,6 +63,11 @@ type Player struct {
 	TicksPerBeat int
 	// 1/Quantize = shortest possible note
 	Quantize int
+
+	// flag to allow only manually activation
+	ManualAI bool
+
+	LastHostPress int
 }
 
 // New initializes the parameters and connects up the piano
@@ -161,11 +166,13 @@ func (p *Player) Start() {
 			p.Tick += 1
 			go p.Emit(p.Tick)
 
-			// if p.Tick-p.lastNote > (p.TicksPerBeat*p.BeatsOfSilence) && p.KeysCurrentlyPressed == 0 {
-			// 	logger.Info("Silence exceeded, trying to improvise")
-			// 	p.lastNote = p.Tick
-			// 	go p.Improvisation()
-			// }
+			if !p.ManualAI {
+				if p.Tick-p.lastNote > (p.TicksPerBeat*p.BeatsOfSilence) && p.KeysCurrentlyPressed == 0 {
+					logger.Info("Silence exceeded, trying to improvise")
+					p.lastNote = p.Tick
+					go p.Improvisation()
+				}
+			}
 
 			// if math.Mod(float64(p.Tick), 64) == 0 {
 			// 	logger.WithFields(log.Fields{
@@ -201,12 +208,17 @@ func (p *Player) Improvisation() {
 	logger := log.WithFields(log.Fields{
 		"function": "Player.Improvisation",
 	})
+	if p.MusicFuture.HasFuture(p.Tick) {
+		logger.Debug("Improvising is already in progress")
+		return
+	}
 	if !p.AI.HasLearned {
 		err := p.Teach()
 		if err != nil {
 			return
 		}
 	}
+	logger.Info("Getting improvisation")
 	notes, err := p.AI.Lick(p.Tick)
 	if err != nil {
 		logger.Error(err.Error())
@@ -223,7 +235,9 @@ func (p *Player) Improvisation() {
 func (p *Player) Emit(beat int) {
 	hasNotes, notes := p.MusicFuture.Get(beat)
 	if hasNotes {
-		go p.Piano.PlayNotes(notes, p.BPM)
+		if p.Tick-p.LastHostPress > p.BeatsOfSilence*p.TicksPerBeat && p.KeysCurrentlyPressed == 0 {
+			go p.Piano.PlayNotes(notes, p.BPM)
+		}
 		p.lastNote = p.Tick
 	}
 }
@@ -285,6 +299,7 @@ func (p *Player) Listen() {
 				p.KeysCurrentlyPressed--
 			}
 			if note.On && note.Pitch > p.HighPassFilter {
+				p.LastHostPress = p.Tick
 				p.KeysCurrentlyPressed++
 			}
 			logger.Infof("Adding %+v", note)

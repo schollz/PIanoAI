@@ -67,8 +67,8 @@ func New(ticksPerBeat int) (ai *AI) {
 	ai.hasher.Salt = "piano"
 	ai.hasher.MinLength = 8
 	ai.LinkLength = 3
-	ai.WindowSizeMin = 30
-	ai.WindowSizeMax = 50
+	ai.WindowSizeMin = 20
+	ai.WindowSizeMax = 40
 	ai.Jazzy = true
 	ai.DisallowChords = true
 	ai.MaxChordDistance = 6 // DEPRECATED?
@@ -97,7 +97,7 @@ func (ai *AI) Learn(mus *music.Music) (err error) {
 	logger := log.WithFields(log.Fields{
 		"function": "AI.Analyze",
 	})
-	if len(mus.Notes) < 30 {
+	if len(mus.Notes) < ai.WindowSizeMax {
 		return errors.New("Too few notes")
 	}
 	logger.Debug("Analyzing...")
@@ -179,7 +179,7 @@ func (ai *AI) Learn(mus *music.Music) (err error) {
 	ai.chordArray = ai.chordArray[:chordArrayI]
 	ai.chordStringArray = ai.chordStringArray[:chordArrayI]
 	logger.Debugf("...analyzed %d chords", len(ai.chordArray))
-	if len(ai.chordArray) < 50 {
+	if len(ai.chordArray) < ai.WindowSizeMax {
 		return errors.New("Need more notes")
 	}
 	ai.HasLearned = true

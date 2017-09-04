@@ -104,6 +104,18 @@ func (m *Music) Get(beat int) (hasNotes bool, notes []Note) {
 	return
 }
 
+// HasFuture returns whether there are future beats in the registry
+func (m *Music) HasFuture(currentBeat int) bool {
+	m.RLock()
+	defer m.RUnlock()
+	for beat := range m.Notes {
+		if beat > currentBeat {
+			return true
+		}
+	}
+	return false
+}
+
 // GetAll retrieve notes in music in a thread-safe way
 func (m *Music) GetAll() (notes []Note) {
 	logger := log.WithFields(log.Fields{

@@ -53,6 +53,10 @@ func main() {
 			Name:  "debug",
 			Usage: "debug mode",
 		},
+		cli.BoolFlag{
+			Name:  "manual",
+			Usage: "AI is activated manually",
+		},
 		cli.IntFlag{
 			Name:  "link",
 			Value: 3,
@@ -105,7 +109,7 @@ func main() {
 		p.AI.Jazzy = c.GlobalBool("jazzy")
 		p.AI.Stacatto = c.GlobalBool("stacatto")
 		p.AI.DisallowChords = !c.GlobalBool("chords")
-
+		p.ManualAI = c.GlobalBool("manual")
 		p.Start()
 		return nil
 	}
