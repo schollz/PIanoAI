@@ -83,6 +83,81 @@ There are many command-line options for tuning the AI, but feel free to play wit
 ## Must haves
 
 - [ ] [External script that will start/stop piano based on plugging in Midi](https://raspberrypi.stackexchange.com/questions/19600/is-there-a-way-to-automatically-activate-a-script-when-a-usb-device-connects?newreg=270fe49c413340daa171e1dfdbf96de9)
+
+
+
+Use udev rules.
+
+find your device information.
+
+=============================================================================================
+
+udevadm -a -p /dev/path/device/
+
+udevadm: invalid option -- 'a'
+
+https://www.linuxquestions.org/questions/debian-26/udevinfo-883749/
+
+udevadm info --query=all /dev/input/mouse0
+
+no attributes shown
+
+=============================================================================================
+
+RESEARCHED AND FOUND SIMILAR RESULT IN DEBIAN STRETCH (TERMINAL NEEDS A LOT OF SCROLL BACK LINES):
+
+https://sites.google.com/site/itmyshare/system-admin-tips-and-tools/udevadm---useage-examples
+
+udevadm info --attribute-walk --name /dev/sdc
+
+    ...
+    ...
+    ...
+ 
+  looking at parent device '/devices/pci0000:00/0000:00:14.0/usb1/1-9/1-9.2':
+  
+    KERNELS=="1-9.2"
+    
+    SUBSYSTEMS=="usb"
+    
+    DRIVERS=="usb"
+    
+    ATTRS{authorized}=="1"
+    
+    ...
+    
+    ATTRS{manufacturer}=="PQI"
+    
+    ...
+    
+    ATTRS{product}=="PQI USB Flash Drive"
+    
+    ATTRS{quirks}=="0x0"
+    
+    ...
+    
+    ATTRS{serial}=="0000000000002C"
+    
+    ...
+
+Then create your udev rules file for your device. When creating rules file, use information you got from udevinfo command.
+
+content of /etc/udev/rules.d/99-mydevice.rules
+
+SUBSYSTEMS=="usb", ATTRS{serial}=="0000000000002C", RUN+="/home/gurcan/sync.sh"
+
+Create your script that will run as USB device connected
+
+#!/bin/bash
+#
+rsync -avz /media/disk/photos/ /data/photos/
+
+Reload udev rules
+
+udevcontrol reload_rules
+
+Test it. unplug/plug
+
 - [ ] Save sessions as MIDI
 
 ## Want haves
