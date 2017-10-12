@@ -18,7 +18,7 @@ Read more about it at [rpiai.com/piano](https://rpiai.com/piano/).
 
 # Try it
 
-1. Get a MIDI-enabled keyboard and [two-way MIDI adapter ($11)](http://amzn.to/2z46jsk)
+1. Get a MIDI-enabled keyboard and [two-way MIDI adapter ($11)](http://amzn.to/2z46jsk). Or get a [USB-MIDI keyboard ($38)](http://amzn.to/2ziXHii).
 2. Get a [Raspberry Pi](http://amzn.to/2z3z8F5) (however, a Windows / Linux / OS X computer should also work) and connect it to the MIDI keyboard.
 3. Build latest version of `libportmidi` (OS X: `brew install portmidi`).
 
