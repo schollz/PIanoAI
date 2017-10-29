@@ -18,8 +18,8 @@ Read more about it at [rpiai.com/piano](https://rpiai.com/piano/).
 
 # Try it
 
-1. Get a MIDI-enabled keyboard and [two-way MIDI adapter ($11)](http://amzn.to/2z46jsk). Or get a [USB-MIDI keyboard ($38)](http://amzn.to/2ziXHii).
-2. Get a [Raspberry Pi](http://amzn.to/2z3z8F5) (however, a Windows / Linux / OS X computer should also work) and connect it to the MIDI keyboard.
+1. Get a MIDI-enabled keyboard and [two-way MIDI adapter ($18)](https://www.amazon.com/gp/product/B0739M6XZ1/ref=as_li_tl?ie=UTF8&tag=scholl-20&camp=1789&creative=9325&linkCode=as2&creativeASIN=B0739M6XZ1&linkId=a780a9b1af1417680e01e183c137be1d). Or get a [USB-MIDI keyboard ($38)](https://www.amazon.com/gp/product/B00VHKMK64/ref=as_li_tl?ie=UTF8&tag=scholl-20&camp=1789&creative=9325&linkCode=as2&creativeASIN=B00VHKMK64&linkId=51809da99cc2145b572498639b367c9c).
+2. Get a [Raspberry Pi](https://www.amazon.com/gp/product/B01C6EQNNK/ref=as_li_tl?ie=UTF8&tag=scholl-20&camp=1789&creative=9325&linkCode=as2&creativeASIN=B01C6EQNNK&linkId=805012388be781415a6be827b50c76ac) (however, a Windows / Linux / OS X computer should also work) and connect it to the MIDI keyboard.
 3. Build latest version of `libportmidi` (OS X: `brew install portmidi`).
 
 ```
