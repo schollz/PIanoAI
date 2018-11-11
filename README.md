@@ -1,4 +1,4 @@
-<img align="right" src="https://rpiai.com/content/images/2017/09/gopher-1.svg" width="180" />
+<img align="right" src="https://user-images.githubusercontent.com/6550035/48313505-72cefb80-e572-11e8-97d5-19d43e63f23e.png" width="180" />
 
 # PIanoAI (Piano AI on a Raspberry Pi)
 
