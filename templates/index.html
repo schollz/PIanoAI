@@ -1,0 +1,95 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Piano</title>
+
+    <!-- <script type="text/javascript" src="/static/Waveform.js"></script> -->
+    <script type="text/javascript" src="/static/Tone.min.js"></script>
+    <LINK href="/static/tone.css" rel="stylesheet" type="text/css">
+</head>
+
+<body>
+
+
+    <div id='content'>
+        <p>Average ping/pong latency: <b><span id="ping-pong"></span>ms</b></p>
+    </div>
+    <script type="text/javascript" charset="utf-8">
+        Tone.context.lookAhead = 0.01;
+        //creates 6 instances of the Tone.Synth
+        var polySynth = new Tone.PolySynth(4, Tone.Synth).toMaster();
+
+        polySynth.set({
+            "oscillator": {
+                "type": "triangle"
+            },
+            "envelope": {
+                "attack": 0.005,
+                "decay": 0.05,
+                "sustain": 0.3,
+                "release": 1
+            }
+        })
+
+
+
+
+
+        var socket;
+        const socketMessageListener = (event) => {
+            var data = JSON.parse(event.data);
+            if (data.message == "note") {
+                console.log(data.note);
+                if (data.note.velocity > 0) {
+                    polySynth.triggerAttack([data.note.name], undefined, data.note.velocity / 128);
+                } else {
+                    polySynth.triggerRelease([data.note.name]);
+                }
+            } else if (data.message == "pong") {
+                var latency = (new Date).getTime() - start_time;
+                console.log('got pong with latency ' + latency);
+                ping_pong_times.push(latency);
+                ping_pong_times = ping_pong_times.slice(-30); // keep last 30 samples
+                var sum = 0;
+                for (var i = 0; i < ping_pong_times.length; i++)
+                    sum += ping_pong_times[i];
+                document.getElementById("ping-pong").innerText = Math.round(10 * sum / ping_pong_times.length) / 10;
+            }
+        };
+        const socketOpenListener = (event) => {
+            console.log('Connected');
+        };
+        const socketCloseListener = (event) => {
+            if (socket) {
+                console.error('Disconnected.');
+            }
+            var url = window.origin.replace("http", "ws") + '/ws';
+            socket = new WebSocket(url);
+            socket.addEventListener('open', socketOpenListener);
+            socket.addEventListener('message', socketMessageListener);
+            socket.addEventListener('close', socketCloseListener);
+            console.log('opening socket to ' + url)
+        };
+
+
+        // Interval function that tests message latency by sending a "ping"
+        // message. The server then responds with a "pong" message and the
+        // round trip time is measured.
+        var ping_pong_times = [];
+        var start_time;
+        window.setInterval(function () {
+            start_time = (new Date).getTime();
+            socket.send(JSON.stringify({
+                "message": "ping"
+            }));
+        }, 10000);
+
+
+        socketCloseListener();
+    </script>
+
+</body>
+
+</html>
